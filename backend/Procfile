@@ -1,0 +1,8 @@
+# Web API (Gunicorn with 4 Uvicorn workers for high concurrency)
+web: gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000} --timeout 120
+
+# Background worker for Celery (handles reply processing, video sync, etc.)
+worker: celery -A worker.celery_app worker --loglevel=info --concurrency=4 --pool=solo
+
+# beat: Celery Beat for scheduled tasks (periodic cache sync, cleanup)
+beat: celery -A worker.celery_app beat -S redbeat.RedBeatScheduler --loglevel=info

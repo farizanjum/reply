@@ -1,0 +1,44 @@
+# Core Framework
+fastapi
+uvicorn[standard]
+python-multipart
+gunicorn
+
+# Database
+aiosqlite          # Local development (SQLite)
+asyncpg            # Production (PostgreSQL with connection pooling)
+
+# Caching & Queue
+redis              # Redis cache and distributed state
+celery[redis]      # Background task processing
+celery-redbeat     # Redis-backed beat scheduler
+
+# WebSocket
+websockets         # WebSocket support for real-time updates
+
+# Google APIs
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+
+# HTTP Client
+aiohttp
+requests
+
+# Authentication
+PyJWT
+
+# Environment
+python-dotenv
+pydantic
+pydantic-settings
+
+# Utilities
+pytz
+
+# Testing & Performance
+pytest              # Unit testing
+pytest-asyncio      # Async test support
+locust             # Load testing
+httpx              # Async HTTP client for testing

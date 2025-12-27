@@ -1,0 +1,18 @@
+# AI/IDE Settings
+.claude/
+.gemini/
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+*.env
+.env*
+
+# Local dev databases (if any at root)
+*.db
+*.sqlite
+*.sqlite3
