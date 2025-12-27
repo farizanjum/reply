@@ -52,7 +52,7 @@ export async function GET(
         }
 
         // Fetch settings from Python backend
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
         const response = await fetch(`${backendUrl}/api/videos/${videoId}/settings`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -105,7 +105,7 @@ export async function PUT(
         }
 
         // Send to Python backend
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
         const response = await fetch(`${backendUrl}/api/videos/${videoId}/settings`, {
             method: 'PUT',
             headers: {

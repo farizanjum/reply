@@ -5,7 +5,7 @@ import { getGoogleAccessToken, prisma } from '@/lib/google-token';
 import jwt from 'jsonwebtoken';
 
 const BACKEND_SECRET = process.env.BACKEND_SECRET_KEY || process.env.SECRET_KEY || 'dev-secret-key-change-in-production';
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
 export async function POST(request: NextRequest) {
     try {
