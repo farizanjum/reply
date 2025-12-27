@@ -60,10 +60,11 @@ export default function SignUpPage() {
         setAuthError(null);
 
         try {
+            const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
             const { signIn } = await import('@/lib/auth-client');
             await signIn.social({
                 provider: 'google',
-                callbackURL: 'http://localhost:3000/dashboard',
+                callbackURL: `${baseUrl}/dashboard`,
             });
         } catch (error: any) {
             setAuthError(error.message || 'Failed to sign in with Google');

@@ -88,10 +88,11 @@ export default function LoginPage() {
         setAuthError(null);
 
         try {
+            const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
             await signIn.social({
                 provider: 'google',
-                callbackURL: 'http://localhost:3000/dashboard',
-                errorCallbackURL: 'http://localhost:3000/auth/login?error=oauth_failed',
+                callbackURL: `${baseUrl}/dashboard`,
+                errorCallbackURL: `${baseUrl}/auth/login?error=oauth_failed`,
             });
         } catch (error: any) {
             setAuthError(error.message || 'Failed to sign in with Google');
