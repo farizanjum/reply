@@ -23,6 +23,12 @@ pool: Optional[Pool] = None
 async def init_db():
     """Initialize PostgreSQL connection pool and create tables"""
     global pool
+    import ssl
+    
+    # Create SSL context for Heroku Postgres
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
     
     # Create connection pool
     # min_size: Minimum connections kept open (warm pool)
@@ -33,6 +39,7 @@ async def init_db():
         max_size=50,  # Handles 50 concurrent operations
         max_inactive_connection_lifetime=300,
         command_timeout=60,
+        ssl=ssl_context if settings.IS_HEROKU else None,
     )
     
     # Create tables
@@ -172,7 +179,16 @@ async def get_db_connection():
 @asynccontextmanager
 async def get_direct_connection():
     """Get a direct connection (not from pool) - for Celery tasks"""
-    conn = await asyncpg.connect(dsn=settings.db_url)
+    import ssl
+    
+    # Create SSL context for Heroku Postgres
+    ssl_context = None
+    if settings.IS_HEROKU:
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+    
+    conn = await asyncpg.connect(dsn=settings.db_url, ssl=ssl_context)
     try:
         yield conn
     finally:
