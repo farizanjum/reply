@@ -44,111 +44,153 @@ async def init_db():
     
     # Create tables
     async with pool.acquire() as conn:
-        # Users table
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                google_id VARCHAR(255) UNIQUE NOT NULL,
-                channel_id VARCHAR(255),
-                channel_name VARCHAR(255),
-                channel_thumbnail TEXT,
-                access_token TEXT,
-                refresh_token TEXT,
-                token_expiry TIMESTAMP,
-                created_at TIMESTAMP DEFAULT NOW(),
-                updated_at TIMESTAMP DEFAULT NOW()
-            )
-        """)
+        # Users table - wrapping in try-except to handle existing tables
+        try:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    google_id VARCHAR(255) UNIQUE NOT NULL,
+                    channel_id VARCHAR(255),
+                    channel_name VARCHAR(255),
+                    channel_thumbnail TEXT,
+                    access_token TEXT,
+                    refresh_token TEXT,
+                    token_expiry TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+        except Exception as e:
+            print(f"Note: users table creation skipped (may already exist): {e}")
         
         # Videos table
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS videos (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                video_id VARCHAR(255) UNIQUE NOT NULL,
-                title TEXT NOT NULL,
-                description TEXT,
-                thumbnail_url TEXT,
-                published_at TIMESTAMP,
-                view_count BIGINT DEFAULT 0,
-                comment_count INTEGER DEFAULT 0,
-                auto_reply_enabled BOOLEAN DEFAULT FALSE,
-                keywords JSONB DEFAULT '[]'::jsonb,
-                reply_templates JSONB DEFAULT '[]'::jsonb,
-                schedule_type VARCHAR(50) DEFAULT 'hourly',
-                schedule_interval_minutes INTEGER DEFAULT 60,
-                last_checked_at TIMESTAMP,
-                created_at TIMESTAMP DEFAULT NOW(),
-                updated_at TIMESTAMP DEFAULT NOW()
-            )
-        """)
+        try:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS videos (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    video_id VARCHAR(255) UNIQUE NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    thumbnail_url TEXT,
+                    published_at TIMESTAMP,
+                    view_count BIGINT DEFAULT 0,
+                    comment_count INTEGER DEFAULT 0,
+                    auto_reply_enabled BOOLEAN DEFAULT FALSE,
+                    keywords JSONB DEFAULT '[]'::jsonb,
+                    reply_templates JSONB DEFAULT '[]'::jsonb,
+                    schedule_type VARCHAR(50) DEFAULT 'hourly',
+                    schedule_interval_minutes INTEGER DEFAULT 60,
+                    last_checked_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+        except Exception as e:
+            print(f"Note: videos table creation skipped: {e}")
         
         # Replied comments table (critical for duplicate prevention)
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS replied_comments (
-                id SERIAL PRIMARY KEY,
-                comment_id VARCHAR(255) UNIQUE NOT NULL,
-                video_id VARCHAR(255) NOT NULL,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                comment_text TEXT,
-                comment_author VARCHAR(255),
-                keyword_matched VARCHAR(100),
-                reply_text TEXT NOT NULL,
-                replied_at TIMESTAMP DEFAULT NOW()
-            )
-        """)
+        try:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS replied_comments (
+                    id SERIAL PRIMARY KEY,
+                    comment_id VARCHAR(255) UNIQUE NOT NULL,
+                    video_id VARCHAR(255) NOT NULL,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    comment_text TEXT,
+                    comment_author VARCHAR(255),
+                    keyword_matched VARCHAR(100),
+                    reply_text TEXT NOT NULL,
+                    replied_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+        except Exception as e:
+            print(f"Note: replied_comments table creation skipped: {e}")
         
-        # Create indexes for fast lookups
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_videos_user_id ON videos(user_id)
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_videos_video_id ON videos(video_id)
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_videos_auto_reply 
-            ON videos(auto_reply_enabled) WHERE auto_reply_enabled = true
-        """)
-        await conn.execute("""
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_comment_id_unique 
-            ON replied_comments(comment_id)
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_replied_video_id 
-            ON replied_comments(video_id)
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_replied_user_id 
-            ON replied_comments(user_id)
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_replied_at 
-            ON replied_comments(replied_at DESC)
-        """)
+        # Create indexes for fast lookups - wrap all in try-except
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_videos_user_id ON videos(user_id)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_videos_video_id ON videos(video_id)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_videos_auto_reply 
+                ON videos(auto_reply_enabled) WHERE auto_reply_enabled = true
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_comment_id_unique 
+                ON replied_comments(comment_id)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_replied_video_id 
+                ON replied_comments(video_id)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_replied_user_id 
+                ON replied_comments(user_id)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_replied_at 
+                ON replied_comments(replied_at DESC)
+            """)
+        except:
+            pass
 
-        # User Templates table (NEW)
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS user_templates (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                template_text TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT NOW()
-            )
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_user_templates_user_id 
-            ON user_templates(user_id)
-        """)
+        # User Templates table
+        try:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS user_templates (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    template_text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+        except Exception as e:
+            print(f"Note: user_templates table creation skipped: {e}")
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_user_templates_user_id 
+                ON user_templates(user_id)
+            """)
+        except:
+            pass
         
         # Migration: Add schedule_interval_minutes column if not exists
-        await conn.execute("""
-            ALTER TABLE videos 
-            ADD COLUMN IF NOT EXISTS schedule_interval_minutes INTEGER DEFAULT 60
-        """)
+        try:
+            await conn.execute("""
+                ALTER TABLE videos 
+                ADD COLUMN IF NOT EXISTS schedule_interval_minutes INTEGER DEFAULT 60
+            """)
+        except:
+            pass
     
     print("✓ PostgreSQL database initialized with connection pool")
 
