@@ -28,6 +28,8 @@ export const auth = betterAuth({
     // Trusted origins for OAuth callbacks
     trustedOrigins: [
         "http://localhost:3000",
+        "https://tryreply.app",
+        "https://www.tryreply.app",
         process.env.NEXT_PUBLIC_APP_URL,
         process.env.BETTER_AUTH_URL,
     ].filter(Boolean) as string[],
