@@ -50,7 +50,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://yourapp.vercel.app",
+        "https://tryreply.app",
+        "https://www.tryreply.app",
         settings.FRONTEND_URL
     ],
     allow_credentials=True,
