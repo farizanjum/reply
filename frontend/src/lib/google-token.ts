@@ -22,6 +22,12 @@ if (process.env.DATABASE_URL) {
  * @returns The access token, or null if no Google account is connected
  */
 export async function getGoogleAccessToken(userId: string): Promise<string | null> {
+    // Check if prisma is available
+    if (!prisma) {
+        console.error('❌ Prisma not initialized - DATABASE_URL may be missing');
+        return null;
+    }
+
     const account = await prisma.account.findFirst({
         where: { userId, providerId: 'google' },
         select: {
@@ -108,6 +114,10 @@ export async function logAuditEvent(
     userAgent?: string | null
 ): Promise<void> {
     try {
+        if (!prisma) {
+            console.warn('⚠️ Prisma not initialized - skipping audit log');
+            return;
+        }
         await prisma.auditLog.create({
             data: {
                 userId,
