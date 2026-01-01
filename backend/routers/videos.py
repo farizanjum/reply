@@ -310,36 +310,47 @@ async def trigger_reply(video_id: str, authorization: str = Header(None)):
         }
 
 
-# New endpoint: Check task status
-@router.get("/tasks/{task_id}/status")
-async def get_task_status(task_id: str, authorization: str = Header(None)):
-    """Check status of background task"""
+@router.get("/task-status/{task_id}")
+async def get_task_status(
+    task_id: str,
+    authorization: str = Header(None)
+):
+    """Get status of a Celery task"""
     user = await get_current_user_from_header(authorization)
     
     from config import settings
+    
     if not settings.USE_REDIS:
-        raise HTTPException(400, "Background tasks not available in local mode")
+        return {"error": "Task tracking not available in local mode"}
     
     from celery.result import AsyncResult
+    from worker import celery_app
     
-    task = AsyncResult(task_id)
+    # Get task result
+    task = AsyncResult(task_id, app=celery_app)
     
-    if task.ready():
-        result = task.get()
+    if task.state == 'PENDING':
+        return {
+            "status": "pending",
+            "message": "Task is waiting in queue"
+        }
+    elif task.state == 'STARTED':
+        return {
+            "status": "processing",
+            "message": "Task is currently running"
+        }
+    elif task.state == 'SUCCESS':
         return {
             "status": "completed",
-            "task_id": task_id,
-            "result": result
+            **task.result  # Contains total_comments, replied, failed, etc.
         }
-    elif task.failed():
+    elif task.state == 'FAILURE':
         return {
-            "status": "failed",
-            "task_id": task_id,
+            "status": "error",
             "error": str(task.info)
         }
     else:
         return {
-            "status": "processing",
-            "task_id": task_id,
-            "progress": task.info if task.state == 'PROGRESS' else None
+            "status": task.state.lower(),
+            "message": f"Task state: {task.state}"
         }
