@@ -98,8 +98,13 @@ export const videosApi = {
 
 export const analyticsApi = {
     getAnalytics: () => api.get('/api/analytics/'),
-    getChartData: (days?: number) =>
-        api.get('/api/analytics/chart', { params: { days } }),
+    getChartData: async (days?: number) => {
+        // Use frontend API route instead of direct backend call
+        const response = await fetch(`/api/youtube/analytics/chart?days=${days || 7}`);
+        if (!response.ok) throw new Error('Failed to fetch chart data');
+        const data = await response.json();
+        return { data };
+    },
 };
 
 export const templatesApi = {
