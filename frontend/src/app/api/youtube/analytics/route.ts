@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 
+async function getBackendToken(user: any) {
+    // Generate JWT for backend auth (same as other routes)
+    const jwt = require('jsonwebtoken');
+    const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key-min-32-characters!!';
+
+    return jwt.sign(
+        {
+            user_id: user.id,
+            email: user.email,
+            name: user.name,
+            source: 'better_auth'
+        },
+        SECRET_KEY,
+        { expiresIn: '24h', algorithm: 'HS256' }
+    );
+}
+
 export async function GET(request: NextRequest) {
     try {
         // Get current session
@@ -16,25 +33,36 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Return mock analytics for now - can be enhanced later
-        // Once videos API works, we can aggregate real stats
-        return NextResponse.json({
-            totalReplies: 0,
-            activeVideos: 0,
-            todayReplies: 0,
-            quotaUsed: 0,
-            quotaLimit: 10000,
-            weeklyStats: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                values: [0, 0, 0, 0, 0, 0, 0]
+        // Get backend token for auth
+        const backendToken = await getBackendToken(session.user);
+
+        // Fetch real analytics from backend
+        const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const response = await fetch(`${BACKEND_URL}/api/analytics/`, {
+            headers: {
+                'Authorization': `Bearer ${backendToken}`
             }
         });
 
+        if (!response.ok) {
+            throw new Error(`Backend returned ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Return analytics data
+        return NextResponse.json(data);
+
     } catch (error: any) {
         console.error('Analytics API error:', error);
-        return NextResponse.json(
-            { error: error.message || 'Failed to fetch analytics' },
-            { status: 500 }
-        );
+        // Return empty analytics on error (graceful degradation)
+        return NextResponse.json({
+            total_replies: 0,
+            replies_today: 0,
+            replies_this_week: 0,
+            quota_used: 0,
+            quota_units_used: 0,
+            recent_replies: []
+        });
     }
 }
