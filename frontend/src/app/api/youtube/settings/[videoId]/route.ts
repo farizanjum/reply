@@ -3,31 +3,22 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 
 // Get backend token if available
-async function getBackendToken(): Promise<string | null> {
+async function getBackendToken(user: any) {
     try {
-        const session = await auth.api.getSession({
-            headers: await headers()
-        });
-
-        if (!session?.user?.id) return null;
-
-        // Generate JWT using the same logic as /api/backend/token
+        // Generate JWT using the same logic as other routes
         const jwt = require('jsonwebtoken');
-        const BACKEND_SECRET = process.env.BACKEND_SECRET_KEY || process.env.SECRET_KEY || 'dev-secret-key-change-in-production';
+        const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key-min-32-characters!!';
 
-        const token = jwt.sign(
+        return jwt.sign(
             {
-                user_id: session.user.id,
-                email: session.user.email,
-                name: session.user.name,
-                source: 'better_auth',
-                exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
+                user_id: user.id,
+                email: user.email,
+                name: user.name,
+                source: 'better_auth'
             },
-            BACKEND_SECRET,
-            { algorithm: 'HS256' }
+            SECRET_KEY,
+            { expiresIn: '24h', algorithm: 'HS256' }
         );
-
-        return token;
     } catch (e) {
         console.error('Failed to generate backend token:', e);
         return null;
