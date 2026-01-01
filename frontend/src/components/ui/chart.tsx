@@ -108,8 +108,8 @@ const ChartTooltip = Tooltip
 
 const ChartTooltipContent = React.forwardRef<
     HTMLDivElement,
-    React.ComponentProps<typeof Tooltip> &
-    React.ComponentProps<"div"> & {
+    React.ComponentProps<"div"> &
+    TooltipProps<any, any> & {
         hideLabel?: boolean
         hideIndicator?: boolean
         indicator?: "line" | "dot" | "dashed"
