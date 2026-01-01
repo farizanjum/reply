@@ -137,8 +137,60 @@ export async function GET(request: NextRequest) {
             );
         }
 
+
         // Fetch videos from YouTube
         const { videos, channel } = await fetchYouTubeVideos(accessToken);
+
+        // AUTO-SYNC: Send videos to backend database
+        // This ensures videos exist in backend so settings can be saved
+        try {
+            const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+            const jwt = require('jsonwebtoken');
+            const BACKEND_SECRET = process.env.BACKEND_SECRET_KEY || process.env.SECRET_KEY || 'dev-secret-key-change-in-production';
+
+            // Generate JWT token for backend auth
+            const backendToken = jwt.sign(
+                {
+                    user_id: session.user.id,
+                    email: session.user.email,
+                    name: session.user.name,
+                    source: 'better_auth',
+                    exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
+                },
+                BACKEND_SECRET,
+                { algorithm: 'HS256' }
+            );
+
+            // Sync videos to backend
+            const syncResponse = await fetch(`${BACKEND_URL}/api/videos/upsert-batch`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${backendToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    videos.map((v: any) => ({
+                        video_id: v.id,
+                        title: v.title,
+                        description: v.description || '',
+                        thumbnail_url: v.thumbnail,
+                        published_at: v.publishedAt,
+                        view_count: v.stats?.viewCount || 0,
+                        comment_count: v.stats?.commentCount || 0
+                    }))
+                )
+            });
+
+            if (syncResponse.ok) {
+                const syncResult = await syncResponse.json();
+                console.log(`✅ Auto-synced ${syncResult.synced} videos to backend`);
+            } else {
+                console.warn('⚠️ Backend sync failed (non-fatal):', syncResponse.status);
+            }
+        } catch (syncError) {
+            // Don't fail the entire request if backend sync fails
+            console.warn('⚠️ Could not sync to backend (non-fatal):', syncError);
+        }
 
         return NextResponse.json({
             videos,
