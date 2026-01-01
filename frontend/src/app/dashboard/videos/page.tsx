@@ -204,22 +204,83 @@ export default function VideosPage() {
             try {
                 const response = await videosApi.triggerReply(videoId);
 
-                // Update with completed status
-                setProcessingVideos(prev => new Map(prev).set(videoId, {
-                    videoId,
-                    status: 'completed',
-                    progress: 100,
-                    ...response.data
-                }));
+                // If response contains task_id, poll for results
+                if (response.data.task_id) {
+                    const taskId = response.data.task_id;
 
-                // Clear after 5 seconds
-                setTimeout(() => {
-                    setProcessingVideos(prev => {
-                        const newMap = new Map(prev);
-                        newMap.delete(videoId);
-                        return newMap;
-                    });
-                }, 5000);
+                    // Poll for task status every 2 seconds
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+                            const statusResponse = await fetch(`${BACKEND_URL}/api/videos/task-status/${taskId}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('backend_token')}`
+                                }
+                            });
+
+                            if (statusResponse.ok) {
+                                const statusData = await statusResponse.json();
+
+                                if (statusData.status === 'completed') {
+                                    clearInterval(pollInterval);
+                                    setProcessingVideos(prev => new Map(prev).set(videoId, {
+                                        videoId,
+                                        status: 'completed',
+                                        progress: 100,
+                                        ...statusData  // Contains total_comments, replied, failed, etc.
+                                    }));
+
+                                    // Clear after 10 seconds
+                                    setTimeout(() => {
+                                        setProcessingVideos(prev => {
+                                            const newMap = new Map(prev);
+                                            newMap.delete(videoId);
+                                            return newMap;
+                                        });
+                                    }, 10000);
+                                } else if (statusData.status === 'error') {
+                                    clearInterval(pollInterval);
+                                    setProcessingVideos(prev => new Map(prev).set(videoId, {
+                                        videoId,
+                                        status: 'error',
+                                        progress: 0,
+                                        error: statusData.error || 'Task failed'
+                                    }));
+
+                                    setTimeout(() => {
+                                        setProcessingVideos(prev => {
+                                            const newMap = new Map(prev);
+                                            newMap.delete(videoId);
+                                            return newMap;
+                                        });
+                                    }, 10000);
+                                }
+                                // Otherwise keep polling (pending or processing)
+                            }
+                        } catch (pollError) {
+                            console.error('Error polling task status:', pollError);
+                        }
+                    }, 2000);  // Poll every 2 seconds
+
+                    // Stop polling after 60 seconds maximum
+                    setTimeout(() => clearInterval(pollInterval), 60000);
+                } else {
+                    // Direct response (local dev mode)
+                    setProcessingVideos(prev => new Map(prev).set(videoId, {
+                        videoId,
+                        status: 'completed',
+                        progress: 100,
+                        ...response.data
+                    }));
+
+                    setTimeout(() => {
+                        setProcessingVideos(prev => {
+                            const newMap = new Map(prev);
+                            newMap.delete(videoId);
+                            return newMap;
+                        });
+                    }, 10000);
+                }
 
                 return response;
             } catch (error: any) {
@@ -230,14 +291,14 @@ export default function VideosPage() {
                     error: error.response?.data?.detail || error.message || 'Failed to process'
                 }));
 
-                // Clear error after 5 seconds
+                // Clear error after 10 seconds
                 setTimeout(() => {
                     setProcessingVideos(prev => {
                         const newMap = new Map(prev);
                         newMap.delete(videoId);
                         return newMap;
                     });
-                }, 5000);
+                }, 10000);
 
                 throw error;
             }
