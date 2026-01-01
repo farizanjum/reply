@@ -129,9 +129,9 @@ export default function VideosPage() {
                     const response = await fetch(`/api/youtube/settings/${v.id}`);
                     if (response.ok) {
                         const settings = await response.json();
-                        if (settings.keywords?.length > 0 || settings.reply_templates?.length > 0) {
-                            setVideoSettingsMap(prev => new Map(prev).set(v.id, settings));
-                        }
+                        // CRITICAL FIX: Always store settings, even if keywords/templates are empty
+                        // This ensures auto_reply_enabled persists across page refreshes
+                        setVideoSettingsMap(prev => new Map(prev).set(v.id, settings));
                     }
                 } catch (e) {
                     // Ignore errors for individual videos
