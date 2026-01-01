@@ -32,8 +32,19 @@ export async function GET(
     try {
         const { videoId } = await params;
 
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+
+        if (!session?.user?.id) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         // Get backend token
-        const token = await getBackendToken();
+        const token = await getBackendToken(session.user);
 
         if (!token) {
             return NextResponse.json(
@@ -85,8 +96,19 @@ export async function PUT(
         const { videoId } = await params;
         const settings = await request.json();
 
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+
+        if (!session?.user?.id) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         // Get backend token
-        const token = await getBackendToken();
+        const token = await getBackendToken(session.user);
 
         if (!token) {
             return NextResponse.json(
