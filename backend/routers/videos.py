@@ -150,7 +150,8 @@ async def update_settings(
     
     # CRITICAL FIX: Ensure video exists in database before updating settings
     # If video doesn't exist, create a minimal entry so settings can be saved
-    async with get_db_connection() as conn:
+    from db import get_pool
+    async with get_pool().acquire() as conn:
         video_exists = await conn.fetchval(
             "SELECT 1 FROM videos WHERE video_id = $1 AND user_id = $2",
             video_id, user['id']
@@ -158,7 +159,6 @@ async def update_settings(
         
         if not video_exists:
             # Create minimal video entry to allow settings save
-            # The full video details will be synced later from YouTube
             await conn.execute("""
                 INSERT INTO videos (
                     user_id, video_id, title, published_at
