@@ -1,18 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-// Prisma singleton pattern to avoid connection pool issues
-// Only initialize if DATABASE_URL is present
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
-
-let prisma: PrismaClient;
-if (process.env.DATABASE_URL) {
-    prisma = globalForPrisma.prisma ?? new PrismaClient();
-    if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-} else {
-    // Create a dummy prisma that will fail gracefully
-    prisma = null as any;
-    console.warn('⚠️ DATABASE_URL not set - Prisma operations will fail');
-}
+import { prisma } from './prisma';
 
 /**
  * Get a valid Google access token for a user.

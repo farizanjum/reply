@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { delegationAuthPlugin } from "./auth-delegation-plugin";
 
 // Only initialize Prisma if DATABASE_URL is available (skip during build)
-const prisma = process.env.DATABASE_URL ? new PrismaClient() : null;
+import { prisma } from './prisma';
 
 // Check if Google OAuth credentials are available
 const hasGoogleCredentials = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
