@@ -5,6 +5,12 @@ import { analyticsApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, TrendingUp, MessageSquare, Zap, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import {
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+} from "@/components/ui/chart";
 
 export default function AnalyticsPage() {
     const { data: analytics, isLoading } = useQuery({
@@ -125,29 +131,64 @@ export default function AnalyticsPage() {
                 </div>
             </div>
 
-            {/* Chart Placeholder */}
-            <div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden">
+            {/* Reply Activity Chart */}
+            <div className="rounded-xl border bg-card text-card-foreground shadow">
                 <div className="p-6 border-b border-white/5">
                     <h3 className="font-semibold text-lg text-white">Reply Activity (Last 7 Days)</h3>
+                    <p className="text-sm text-muted-foreground">
+                        Showing total replies sent automatically
+                    </p>
                 </div>
                 <div className="p-6">
                     {chartData && chartData.length > 0 ? (
-                        <div className="h-64 flex items-end justify-between gap-2">
-                            {chartData.map((day: any, index: number) => (
-                                <div key={index} className="flex-1 flex flex-col items-center gap-2 group">
-                                    <div className="w-full relative h-full flex items-end">
-                                        <div
-                                            className="w-full bg-gradient-to-t from-orange-600/20 to-orange-500 rounded-sm transition-all duration-300 group-hover:from-orange-600/40 group-hover:to-orange-400"
-                                            style={{
-                                                height: `${Math.max(5, (day.count / Math.max(...chartData.map((d: any) => d.count || 1))) * 100)}%`,
-                                            }}
-                                        />
-                                    </div>
-                                    <span className="text-xs text-[#52525B] group-hover:text-white transition-colors">
-                                        {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                                    </span>
-                                </div>
-                            ))}
+                        <div className="h-[300px] w-full">
+                            <ChartContainer config={{
+                                replies: {
+                                    label: "Replies",
+                                    color: "hsl(var(--chart-1))",
+                                },
+                            }} className="h-full w-full">
+                                <AreaChart
+                                    accessibilityLayer
+                                    data={chartData.map((d: any) => ({
+                                        date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                        replies: d.count
+                                    }))}
+                                    margin={{
+                                        left: 12,
+                                        right: 12,
+                                        top: 12,
+                                        bottom: 12
+                                    }}
+                                >
+                                    <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.1)" />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                        tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
+                                    />
+                                    <ChartTooltip
+                                        cursor={false}
+                                        content={<ChartTooltipContent indicator="dot" />}
+                                    />
+                                    <Area
+                                        dataKey="replies"
+                                        type="natural"
+                                        fill="url(#fillReplies)"
+                                        fillOpacity={0.4}
+                                        stroke="var(--color-replies)"
+                                        strokeWidth={2}
+                                    />
+                                    <defs>
+                                        <linearGradient id="fillReplies" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--color-replies)" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="var(--color-replies)" stopOpacity={0.1} />
+                                        </linearGradient>
+                                    </defs>
+                                </AreaChart>
+                            </ChartContainer>
                         </div>
                     ) : (
                         <div className="h-64 flex items-center justify-center text-[#52525B]">
