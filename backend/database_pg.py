@@ -385,25 +385,41 @@ async def update_video_settings(
     user_id: int,
     settings_dict: Dict
 ) -> bool:
-    """Update video auto-reply settings"""
+    """Update video auto-reply settings - uses UPSERT to create video if doesn't exist"""
     async with pool.acquire() as conn:
+        # UPSERT: Create video with minimal data if doesn't exist, then update settings
         await conn.execute("""
-            UPDATE videos
-            SET auto_reply_enabled = $1,
-                keywords = $2,
-                reply_templates = $3,
-                schedule_type = $4,
-                schedule_interval_minutes = $5,
+            INSERT INTO videos (
+                user_id, 
+                video_id, 
+                title, 
+                published_at,
+                auto_reply_enabled,
+                keywords,
+                reply_templates,
+                schedule_type,
+                schedule_interval_minutes,
+                created_at,
+                updated_at
+            )
+            VALUES ($1, $2, $3, NOW(), $4, $5, $6, $7, $8, NOW(), NOW())
+            ON CONFLICT (video_id) 
+            DO UPDATE SET
+                auto_reply_enabled = EXCLUDED.auto_reply_enabled,
+                keywords = EXCLUDED.keywords,
+                reply_templates = EXCLUDED.reply_templates,
+                schedule_type = EXCLUDED.schedule_type,
+                schedule_interval_minutes = EXCLUDED.schedule_interval_minutes,
                 updated_at = NOW()
-            WHERE video_id = $6 AND user_id = $7
         """,
+            user_id,
+            video_id,
+            f"Video {video_id}",  # Placeholder title - will be updated by sync
             settings_dict.get('auto_reply_enabled', False),
             json.dumps(settings_dict.get('keywords', [])),
             json.dumps(settings_dict.get('reply_templates', [])),
             settings_dict.get('schedule_type', 'hourly'),
-            settings_dict.get('schedule_interval_minutes', 60),
-            video_id,
-            user_id
+            settings_dict.get('schedule_interval_minutes', 60)
         )
         return True
 

@@ -19,6 +19,16 @@ class VideoSettings(BaseModel):
     schedule_type: Optional[str] = "hourly"
     schedule_interval_minutes: Optional[int] = 60  # Default 1 hour, range: 1-1440 (24 hours)
 
+class VideoUpsert(BaseModel):
+    video_id: str
+    title: str
+    description: Optional[str] = ""
+    thumbnail_url: Optional[str] = ""
+    published_at: Optional[str] = None
+    view_count: Optional[int] = 0
+    comment_count: Optional[int] = 0
+
+
 # Import centralized auth middleware
 from middleware.auth_middleware import get_current_user
 
@@ -103,6 +113,33 @@ async def sync_videos(authorization: str = Header(None)):
         return {"synced": synced_count}
 
 
+@router.post("/upsert-batch")
+async def upsert_videos_from_frontend(
+    videos: List[VideoUpsert],
+    authorization: str = Header(None)
+):
+    """Accept videos from frontend and save to backend database"""
+    user = await get_current_user_from_header(authorization)
+    
+    # Convert Pydantic models to dict format expected by upsert_videos_batch
+    video_data = [
+        {
+            'video_id': v.video_id,
+            'title': v.title,
+            'description': v.description or '',
+            'thumbnail_url': v.thumbnail_url or '',
+            'published_at': v.published_at,
+            'view_count': v.view_count or 0,
+            'comment_count': v.comment_count or 0
+        }
+        for v in videos
+    ]
+    
+    synced_count = await upsert_videos_batch(user['id'], video_data)
+    
+    return {"synced": synced_count, "message": f"Synced {synced_count} videos to backend"}
+
+
 @router.get("/{video_id}/settings")
 async def get_video_settings(video_id: str, authorization: str = Header(None)):
     """Get settings for a video"""
@@ -147,27 +184,6 @@ async def update_settings(
 ):
     """Update video settings"""
     user = await get_current_user_from_header(authorization)
-    
-    # CRITICAL FIX: Ensure video exists in database before updating settings
-    # If video doesn't exist, create a minimal entry so settings can be saved
-    async with get_db_connection() as conn:
-        video_exists = await conn.fetchval(
-            "SELECT 1 FROM videos WHERE video_id = $1 AND user_id = $2",
-            video_id, user['id']
-        )
-        
-        if not video_exists:
-            # Create minimal video entry to allow settings save
-            # The full video details will be synced later from YouTube
-            await conn.execute("""
-                INSERT INTO videos (
-                    user_id, video_id, title, published_at
-                )
-                VALUES ($1, $2, $3, NOW())
-                ON CONFLICT (video_id) DO NOTHING
-            """, user['id'], video_id, f"Video {video_id}")
-    
-    # Now update settings (video is guaranteed to exist)
     await update_video_settings(
         video_id,
         user['id'],
