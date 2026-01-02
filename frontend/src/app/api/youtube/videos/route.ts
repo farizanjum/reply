@@ -187,6 +187,47 @@ export async function GET(request: NextRequest) {
             } else {
                 console.warn('⚠️ Backend sync failed (non-fatal):', syncResponse.status);
             }
+
+            // Fetch settings for all videos from backend and merge
+            const settingsPromises = videos.map(async (video: any) => {
+                try {
+                    const settingsRes = await fetch(`${BACKEND_URL}/api/videos/${video.id}/settings`, {
+                        headers: {
+                            'Authorization': `Bearer ${backendToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (settingsRes.ok) {
+                        const settings = await settingsRes.json();
+                        return { videoId: video.id, settings };
+                    }
+                } catch (e) {
+                    // Ignore individual failures
+                }
+                return { videoId: video.id, settings: null };
+            });
+
+            const settingsResults = await Promise.all(settingsPromises);
+            const settingsMap: Record<string, any> = {};
+            settingsResults.forEach(r => {
+                if (r.settings) {
+                    settingsMap[r.videoId] = r.settings;
+                }
+            });
+
+            // Merge settings into videos
+            const videosWithSettings = videos.map((v: any) => ({
+                ...v,
+                auto_reply_enabled: settingsMap[v.id]?.auto_reply_enabled || false,
+                keywords: settingsMap[v.id]?.keywords || [],
+                reply_templates: settingsMap[v.id]?.reply_templates || [],
+            }));
+
+            return NextResponse.json({
+                videos: videosWithSettings,
+                channel,
+                total: videos.length
+            });
         } catch (syncError) {
             // Don't fail the entire request if backend sync fails
             console.warn('⚠️ Could not sync to backend (non-fatal):', syncError);

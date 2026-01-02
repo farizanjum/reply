@@ -132,7 +132,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Reply Activity Chart */}
-            <div className="rounded-xl border bg-card text-card-foreground shadow">
+            <div className="rounded-xl bg-white/[0.02] text-card-foreground">
                 <div className="p-6 border-b border-white/5">
                     <h3 className="font-semibold text-lg text-white">Reply Activity (Last 7 Days)</h3>
                     <p className="text-sm text-muted-foreground">
