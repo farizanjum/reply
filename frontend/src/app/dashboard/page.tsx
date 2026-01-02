@@ -226,7 +226,7 @@ export default function DashboardPage() {
                             </div>
                         ) : analytics?.recent_replies?.length > 0 ? (
                             <div className="divide-y divide-white/5">
-                                {analytics.recent_replies.map((reply: any, index: number) => (
+                                {analytics.recent_replies.slice(0, 3).map((reply: any, index: number) => (
                                     <div key={index} className="p-4 flex items-start gap-4 hover:bg-white/[0.02] transition-colors">
                                         <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-500">
                                             <MessageSquare className="w-4 h-4" />
