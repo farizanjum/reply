@@ -218,7 +218,7 @@ export default function DashboardPage() {
                         <Link href="/dashboard/analytics" className="text-xs text-[#A1A1AA] hover:text-white transition">View all</Link>
                     </div>
 
-                    <div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden min-h-[300px]">
+                    <div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden">
                         {analyticsLoading ? (
                             <div className="h-[300px] flex items-center justify-center text-[#52525B]">
                                 <Loader2 className="w-6 h-6 animate-spin mr-2" />
