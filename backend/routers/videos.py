@@ -239,75 +239,82 @@ async def trigger_reply(video_id: str, authorization: str = Header(None)):
             "failed": 0
         }
     
-    # Use Celery if Redis is available
-    if settings.USE_REDIS:
-        from tasks import process_video_replies
-        
-        # Submit background job
-        task = process_video_replies.delay(
-            video_id,
-            user['id'],
-            video['keywords'],
-            video['reply_templates'],
-            max_comments=1000  # Process up to 1000 comments
-        )
-        
-        return {
-            "status": "processing",
-            "task_id": task.id,
-            "message": "Reply processing started in background. Connect to WebSocket for live updates.",
-            "websocket_url": f"/ws/{user['id']}"
-        }
-    else:
-        # Fallback: Process synchronously (local development)
-        from services.reply_engine import ReplyEngine
-        from services.quota_manager import QuotaManager
-        from database_pg import update_user_tokens
-        
-        youtube = AsyncYouTubeClient(
-            user['access_token'], 
-            user['refresh_token'],
-            user_id=user['id'],
-            on_token_refresh=update_user_tokens
-        )
-        quota_mgr = QuotaManager()
-        engine = ReplyEngine(youtube, quota_mgr)
-        
-        # Check quota
-        remaining = await quota_mgr.get_remaining_quota()
-        if remaining < 100:
-            raise HTTPException(503, "Insufficient quota")
-        
-        # Fetch comments
-        comments = await youtube.get_video_comments(video_id)
-        
-        # Filter by keywords
-        filtered = engine.filter_comments_by_keywords(
-            comments,
-            video['keywords']
-        )
-        
-        # Filter non-replied
-        to_reply = await engine.filter_non_replied(filtered)
-        
-        # Reply (limit to 20 for manual trigger in sync mode)
-        results = await engine.reply_to_comments_batch(
-            to_reply[:20],
-            video_id,
-            user['id'],
-            video['reply_templates']
-        )
-        
-        succeeded = sum(1 for r in results if r.get('success'))
-        failed = sum(1 for r in results if not r.get('success'))
-        
-        return {
-            "total_comments": len(comments),
-            "qualified": len(filtered),
-            "non_replied": len(to_reply),
-            "replied": succeeded,
-            "failed": failed
-        }
+    # FORCE SYNCHRONOUS PROCESSING for reliability on Heroku Free Tier
+    # The Redis/Celery path is causing SSL issues and 'stuck processing' states
+    # Synchronous processing provides immediate feedback and is robust
+    if False:  # Disabled Celery path temporarily
+        try:
+            from tasks import process_video_replies
+            
+            # Submit background job
+            task = process_video_replies.delay(
+                video_id,
+                user['id'],
+                video['keywords'],
+                video['reply_templates'],
+                max_comments=1000  # Process up to 1000 comments
+            )
+            
+            return {
+                "status": "processing",
+                "task_id": task.id,
+                "message": "Reply processing started in background.",
+                "websocket_url": f"/ws/{user['id']}"
+            }
+        except Exception as redis_error:
+            # Redis/Celery unavailable - log and fall through to synchronous processing
+            print(f"⚠️ Celery unavailable ({type(redis_error).__name__}), falling back to synchronous processing")
+            # Fall through to synchronous processing below
+    
+    # Synchronous processing (free-tier friendly, immediate results)
+    from services.reply_engine import ReplyEngine
+    from services.quota_manager import QuotaManager
+    from database_pg import update_user_tokens
+    
+    youtube = AsyncYouTubeClient(
+        user['access_token'], 
+        user['refresh_token'],
+        user_id=user['id'],
+        on_token_refresh=update_user_tokens
+    )
+    quota_mgr = QuotaManager()
+    engine = ReplyEngine(youtube, quota_mgr)
+    
+    # Check quota
+    remaining = await quota_mgr.get_remaining_quota()
+    if remaining < 100:
+        raise HTTPException(503, "Insufficient quota")
+    
+    # Fetch comments
+    comments = await youtube.get_video_comments(video_id)
+    
+    # Filter by keywords
+    filtered = engine.filter_comments_by_keywords(
+        comments,
+        video['keywords']
+    )
+    
+    # Filter non-replied
+    to_reply = await engine.filter_non_replied(filtered)
+    
+    # Reply (limit to 20 for manual trigger in sync mode)
+    results = await engine.reply_to_comments_batch(
+        to_reply[:20],
+        video_id,
+        user['id'],
+        video['reply_templates']
+    )
+    
+    succeeded = sum(1 for r in results if r.get('success'))
+    failed = sum(1 for r in results if not r.get('success'))
+    
+    return {
+        "total_comments": len(comments),
+        "qualified": len(filtered),
+        "non_replied": len(to_reply),
+        "replied": succeeded,
+        "failed": failed
+    }
 
 
 @router.get("/task-status/{task_id}")
@@ -323,34 +330,43 @@ async def get_task_status(
     if not settings.USE_REDIS:
         return {"error": "Task tracking not available in local mode"}
     
-    from celery.result import AsyncResult
-    from worker import celery_app
-    
-    # Get task result
-    task = AsyncResult(task_id, app=celery_app)
-    
-    if task.state == 'PENDING':
+    try:
+        from celery.result import AsyncResult
+        from worker import celery_app
+        
+        # Get task result
+        task = AsyncResult(task_id, app=celery_app)
+        
+        if task.state == 'PENDING':
+            return {
+                "status": "pending",
+                "message": "Task is waiting in queue"
+            }
+        elif task.state == 'STARTED':
+            return {
+                "status": "processing",
+                "message": "Task is currently running"
+            }
+        elif task.state == 'SUCCESS':
+            return {
+                "status": "completed",
+                **task.result  # Contains total_comments, replied, failed, etc.
+            }
+        elif task.state == 'FAILURE':
+            return {
+                "status": "error",
+                "error": str(task.info)
+            }
+        else:
+            return {
+                "status": task.state.lower(),
+                "message": f"Task state: {task.state}"
+            }
+    except Exception as e:
+        # Redis/Celery unavailable - task status cannot be retrieved
+        print(f"⚠️ Task status check failed ({type(e).__name__}): {e}")
         return {
-            "status": "pending",
-            "message": "Task is waiting in queue"
-        }
-    elif task.state == 'STARTED':
-        return {
-            "status": "processing",
-            "message": "Task is currently running"
-        }
-    elif task.state == 'SUCCESS':
-        return {
-            "status": "completed",
-            **task.result  # Contains total_comments, replied, failed, etc.
-        }
-    elif task.state == 'FAILURE':
-        return {
-            "status": "error",
-            "error": str(task.info)
-        }
-    else:
-        return {
-            "status": task.state.lower(),
-            "message": f"Task state: {task.state}"
+            "status": "unknown",
+            "error": "Task tracking temporarily unavailable. Task may have completed synchronously.",
+            "message": "Please check your videos list for results"
         }

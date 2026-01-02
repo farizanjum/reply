@@ -31,16 +31,30 @@ async def init_db():
     ssl_context.verify_mode = ssl.CERT_NONE
     
     # Create connection pool
-    # min_size: Minimum connections kept open (warm pool)
-    # max_size: Maximum concurrent connections
-    pool = await asyncpg.create_pool(
-        dsn=settings.db_url,
-        min_size=5,
-        max_size=50,  # Handles 50 concurrent operations
-        max_inactive_connection_lifetime=300,
-        command_timeout=60,
-        ssl=ssl_context if settings.IS_HEROKU else None,
-    )
+    # CRITICAL: Heroku Postgres Hobby has 20 connection limit
+    # With 2 gunicorn workers + celery + beat, we allocate conservatively:
+    # - 2 web workers × 3 max = 6 connections
+    # - 1 celery worker × 3 max = 3 connections  
+    # - 1 beat × 2 max = 2 connections
+    # TOTAL: 11 connections (9 connections headroom for safety)
+    if settings.IS_HEROKU:
+        pool = await asyncpg.create_pool(
+            dsn=settings.db_url,
+            min_size=1,  # Minimal warm pool
+            max_size=3,   # Conservative max to prevent overflow
+            max_inactive_connection_lifetime=300,
+            command_timeout=60,
+            ssl=ssl_context,
+        )
+    else:
+        # Local development - can use larger pool
+        pool = await asyncpg.create_pool(
+            dsn=settings.db_url,
+            min_size=5,
+            max_size=20,
+            max_inactive_connection_lifetime=300,
+            command_timeout=60,
+        )
     
     # Create tables
     async with pool.acquire() as conn:
@@ -63,6 +77,16 @@ async def init_db():
             """)
         except Exception as e:
             print(f"Note: users table creation skipped (may already exist): {e}")
+
+        # Schema Migration: Add quota columns if they don't exist
+        try:
+            await conn.execute("""
+                ALTER TABLE users 
+                ADD COLUMN IF NOT EXISTS daily_quota_used INTEGER DEFAULT 0,
+                ADD COLUMN IF NOT EXISTS last_quota_reset DATE DEFAULT CURRENT_DATE
+            """)
+        except Exception as e:
+            print(f"Note: Quota columns migration skipped: {e}")
         
         # Videos table
         try:

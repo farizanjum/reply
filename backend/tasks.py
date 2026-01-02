@@ -319,6 +319,11 @@ def process_auto_replies_all(self) -> Dict:
     """
     import random
     
+    # IMMEDIATE LOG - confirms task was received by worker
+    print("=" * 50)
+    print("🚀 TASK RECEIVED: process_auto_replies_all")
+    print("=" * 50)
+    
     async def _process_all():
         from database_pg import get_auto_reply_videos, get_user_by_id
         from services.youtube_client import AsyncYouTubeClient
@@ -456,17 +461,19 @@ celery_app.conf.beat_schedule = {
     'auto-reply-scheduler': {
         'task': 'tasks.process_auto_replies_all',
         'schedule': 60.0,  # Every minute
-        'options': {'queue': 'replies'}
+        'options': {'queue': 'celery'}  # MUST match worker's queue!
     },
     # Sync cache every hour
     'sync-cache-every-hour': {
         'task': 'tasks.sync_replied_comments_cache',
         'schedule': 3600.0,  # Every hour
+        'options': {'queue': 'celery'}
     },
     # Cleanup every day
     'cleanup-every-day': {
         'task': 'tasks.cleanup_old_results',
         'schedule': 86400.0,  # Every day
+        'options': {'queue': 'celery'}
     },
 }
 

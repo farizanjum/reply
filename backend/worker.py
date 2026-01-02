@@ -22,6 +22,8 @@ import asyncio
 
 # Create Celery app
 # Heroku Redis requires SSL cert verification disabled
+import ssl
+
 def get_redis_url():
     redis_url = settings.REDIS_URL if settings.USE_REDIS else 'redis://localhost:6379'
     # Heroku Redis uses self-signed certs, disable verification
@@ -34,6 +36,14 @@ def get_redis_url():
 
 redis_url = get_redis_url()
 
+# SSL configuration for Heroku Redis
+broker_use_ssl = None
+if redis_url.startswith('rediss://'):
+    broker_use_ssl = {
+        'ssl_cert_reqs': ssl.CERT_NONE,
+        'ssl_check_hostname': False,
+    }
+
 celery_app = Celery(
     'youtube_autoreply',
     broker=redis_url,
@@ -43,17 +53,23 @@ celery_app = Celery(
 
 # Celery configuration
 celery_app.conf.update(
+    # SSL Configuration for Heroku Redis
+    broker_use_ssl=broker_use_ssl,
+    redis_backend_use_ssl=broker_use_ssl,
+    
     # Serialization
     task_serializer='json',
     result_serializer='json',
     accept_content=['json'],
     
-    # Task routing
+    # Task routing - route to specific queues
     task_routes={
-        'tasks.process_video_replies': {'queue': 'replies'},
-        'tasks.reply_to_comments_batch': {'queue': 'replies'},
-        'tasks.sync_user_videos': {'queue': 'sync'},
-        'tasks.sync_replied_comments_cache': {'queue': 'cache'},
+        'tasks.process_video_replies': {'queue': 'celery'},
+        'tasks.reply_to_comments_batch': {'queue': 'celery'},
+        'tasks.sync_user_videos': {'queue': 'celery'},
+        'tasks.sync_replied_comments_cache': {'queue': 'celery'},
+        'tasks.process_auto_replies_all': {'queue': 'celery'},
+        'tasks.cleanup_old_results': {'queue': 'celery'},
     },
     
     # Performance settings
@@ -107,11 +123,47 @@ def run_async(async_func):
         sys.path.insert(0, backend_dir)
     
     # Reuse existing loop or create new one
-    if _celery_loop is None or _celery_loop.is_closed():
-        _celery_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(_celery_loop)
-    
-    return _celery_loop.run_until_complete(async_func)
+    try:
+        # Check for existing running loop first
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+            
+        if loop and loop.is_running():
+            # If we are already in a running loop, we can't use run_until_complete
+            # This happens in tests or if worker is async. 
+            # For sync tasks, we shouldn't be here, but if we are, create a task?
+            # But we need result synchronously.
+            # We can't block a running loop.
+            # This signals an architecture issue if it happens in prod.
+            # But for safety, we try to create a new loop in a separate thread if needed?
+            # For now, just rely on the global one if not running.
+            pass
+
+        if _celery_loop is None or _celery_loop.is_closed():
+            _celery_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(_celery_loop)
+        
+        return _celery_loop.run_until_complete(async_func)
+    except RuntimeError as e:
+        if "Cannot run the event loop while another loop is running" in str(e):
+             # Deep fallback: Just run the coroutine directly if we are in a loop?
+             # No, you can't await in sync function.
+             # Use a new thread to run the loop
+             import threading
+             result = []
+             def run_in_thread():
+                 new_loop = asyncio.new_event_loop()
+                 asyncio.set_event_loop(new_loop)
+                 result.append(new_loop.run_until_complete(async_func))
+                 new_loop.close()
+             
+             t = threading.Thread(target=run_in_thread)
+             t.start()
+             t.join()
+             return result[0]
+        raise e
 
 
 if __name__ == '__main__':

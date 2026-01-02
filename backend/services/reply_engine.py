@@ -137,7 +137,7 @@ class ReplyEngine:
                     result = await self.youtube.post_comment_reply(comment_id, reply_text)
                     
                     # Track quota
-                    await self.quota_manager.track_request(50)
+                    await self.quota_manager.track_request(50, user_id=user_id)
                     
                     # Human delay AFTER posting
                     await self.delay_gen.after_reply()
