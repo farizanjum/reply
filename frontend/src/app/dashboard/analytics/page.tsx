@@ -3,8 +3,9 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { analyticsApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, TrendingUp, MessageSquare, Zap, Loader2 } from 'lucide-react';
+import { BarChart3, TrendingUp, MessageSquare, Zap, Loader2, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import {
     ChartContainer,
@@ -204,8 +205,17 @@ export default function AnalyticsPage() {
 
             {/* Recent Replies */}
             <div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden">
-                <div className="p-6 border-b border-white/5">
+                <div className="p-6 border-b border-white/5 flex items-center justify-between">
                     <h3 className="font-semibold text-lg text-white">Recent Replies</h3>
+                    {analytics?.recent_replies?.length > 3 && (
+                        <Link
+                            href="/dashboard/replies"
+                            className="text-sm text-orange-500 hover:text-orange-400 transition-colors flex items-center gap-1"
+                        >
+                            View All
+                            <ArrowUpRight className="w-4 h-4" />
+                        </Link>
+                    )}
                 </div>
                 <div className="p-0">
                     {analytics?.recent_replies?.length > 0 ? (
@@ -220,7 +230,7 @@ export default function AnalyticsPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
-                                    {analytics.recent_replies.map((reply: any, index: number) => (
+                                    {analytics.recent_replies.slice(0, 3).map((reply: any, index: number) => (
                                         <tr key={index} className="text-sm hover:bg-white/[0.02] transition-colors">
                                             <td className="px-6 py-4 text-white font-medium">{reply.comment_author}</td>
                                             <td className="px-6 py-4 text-[#A1A1AA] max-w-xs truncate">
