@@ -145,7 +145,7 @@ export default function AnalyticsPage() {
                             <ChartContainer config={{
                                 replies: {
                                     label: "Replies",
-                                    color: "hsl(var(--chart-1))",
+                                    color: "#f97316",
                                 },
                             }} className="h-full w-full">
                                 <AreaChart
