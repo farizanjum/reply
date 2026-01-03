@@ -40,8 +40,8 @@ function ShimmerButton({ onClick, children, className }: { onClick?: () => void,
       <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg bg-gray-950 px-6 py-3 text-sm font-medium text-white backdrop-blur-3xl transition hover:bg-gray-900">
         <div className="relative flex items-center gap-2">
           {children}
-          {/* Shimmer overlay */}
-          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          {/* Shimmer overlay - hidden on mobile to avoid frozen gradient look */}
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent hidden md:block" />
         </div>
       </span>
     </button>
@@ -156,11 +156,17 @@ export default function LandingPage() {
             </div>
 
             <div className="flex items-center gap-4 text-sm text-[#52525B]">
-              <div className="flex -space-x-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-6 h-6 rounded-full bg-gray-800 border border-[#050505] ring-1 ring-white/10" />
-                ))}
-              </div>
+              <a
+                href="https://www.instagram.com/parasmadan.in"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src="/Paras_Madan.jpeg"
+                  alt="Paras Madan"
+                  className="w-6 h-6 rounded-full object-cover border border-[#050505] ring-1 ring-white/10 hover:ring-orange-500/50 transition-all cursor-pointer"
+                />
+              </a>
               <p>Trusted by creators with 100M+ views</p>
             </div>
           </div>

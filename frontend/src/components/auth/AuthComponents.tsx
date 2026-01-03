@@ -44,6 +44,10 @@ export const Tiles = ({
                                 backgroundColor: `var(--tile)`,
                                 transition: { duration: 0 },
                             }}
+                            whileTap={{
+                                backgroundColor: `var(--tile)`,
+                                transition: { duration: 0 },
+                            }}
                             animate={{
                                 transition: { duration: 2 },
                             }}
@@ -173,6 +177,16 @@ export const CardSpotlight = ({
         mouseY.set(clientY - top);
     }
 
+    // Touch event handlers for mobile support
+    const handleTouchStart = () => setIsHovering(true);
+    const handleTouchEnd = () => setIsHovering(false);
+    const handleTouchMove = (e: React.TouchEvent) => {
+        const touch = e.touches[0];
+        const { left, top } = e.currentTarget.getBoundingClientRect();
+        mouseX.set(touch.clientX - left);
+        mouseY.set(touch.clientY - top);
+    };
+
     return (
         <div
             className={cn(
@@ -182,12 +196,16 @@ export const CardSpotlight = ({
             onMouseMove={handleMouseMove}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             {...props}
         >
             <motion.div
-                className="pointer-events-none absolute z-0 -inset-px rounded-3xl opacity-0 transition duration-300 group-hover/spotlight:opacity-100"
+                className="pointer-events-none absolute z-0 -inset-px rounded-3xl transition duration-300"
                 style={{
                     backgroundColor: color,
+                    opacity: isHovering ? 1 : 0,
                     maskImage: useMotionTemplate`
             radial-gradient(
               ${radius}px circle at ${mouseX}px ${mouseY}px,
@@ -265,10 +283,10 @@ export const ShimmerButton = React.forwardRef<
                 <div
                     className={cn(
                         "insert-0 absolute size-full",
-                        "rounded-xl px-4 py-1.5 text-sm font-medium shadow-[inset_0_-8px_10px_#ffffff1f]",
+                        "rounded-xl px-4 py-1.5 text-sm font-medium md:shadow-[inset_0_-8px_10px_#ffffff1f]",
                         "transform-gpu transition-all duration-300 ease-in-out",
-                        "group-hover:shadow-[inset_0_-6px_10px_#ffffff3f]",
-                        "group-active:shadow-[inset_0_-10px_10px_#ffffff3f]"
+                        "md:group-hover:shadow-[inset_0_-6px_10px_#ffffff3f]",
+                        "md:group-active:shadow-[inset_0_-10px_10px_#ffffff3f]"
                     )}
                 />
                 <div className={cn("absolute -z-20 [background:var(--bg)] [border-radius:var(--radius)] [inset:var(--cut)]")} />

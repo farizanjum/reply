@@ -40,6 +40,19 @@ export const CardSpotlight = ({
     };
     const handleMouseLeave = () => setIsHovering(false);
 
+    // Touch event handlers for mobile support
+    const handleTouchStart = () => {
+        setIsHovering(true);
+        if (!hasHovered) setHasHovered(true);
+    };
+    const handleTouchEnd = () => setIsHovering(false);
+    const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+        const touch = e.touches[0];
+        const { left, top } = e.currentTarget.getBoundingClientRect();
+        mouseX.set(touch.clientX - left);
+        mouseY.set(touch.clientY - top);
+    };
+
     return (
         <div
             className={cn(
@@ -49,12 +62,16 @@ export const CardSpotlight = ({
             onMouseMove={handleMouseMove}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             {...props}
         >
             <motion.div
-                className="pointer-events-none absolute z-0 -inset-px rounded-md opacity-0 transition duration-300 group-hover/spotlight:opacity-100"
+                className="pointer-events-none absolute z-0 -inset-px rounded-md transition duration-300"
                 style={{
                     backgroundColor: color,
+                    opacity: isHovering ? 1 : 0,
                     maskImage: useMotionTemplate`
             radial-gradient(
               ${radius}px circle at ${mouseX}px ${mouseY}px,
