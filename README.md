@@ -320,6 +320,35 @@ For issues or questions:
 2. Review logs
 3. Open GitHub issue
 
+## v3.0 Roadmap
+
+### Planned Features
+
+**1. Instagram DM Auto-Reply**
+- Automated responses to Instagram DMs based on keywords
+- Similar to existing YouTube functionality
+- Template-based personalized replies
+- Analytics and engagement tracking
+
+**2. One-Click Instagram Connect**
+- Seamless Instagram Business account connection via Facebook OAuth
+- Webhook integration for real-time DM notifications
+- Automatic permission handling
+
+**3. Google OAuth Verification**
+- Complete Google OAuth app verification for production deployment
+- Domain verification and security assessment
+- Removal of "unverified app" warning screen
+
+### Timeline (Estimated)
+
+| Phase | Features | Duration |
+|-------|----------|----------|
+| Phase 1 | Google OAuth Verification | 2-4 weeks |
+| Phase 2 | Instagram Connect Backend | 2 weeks |
+| Phase 3 | Instagram DM Auto-Reply | 2 weeks |
+| Phase 4 | UI/UX Polish & Testing | 1 week |
+
 ## Acknowledgments
 
 - FastAPI for the amazing framework
@@ -330,3 +359,4 @@ For issues or questions:
 ---
 
 **Built with love for YouTube creators**
+

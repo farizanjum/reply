@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { sendWelcomeEmail } from '@/lib/email';
+import { auth } from '@/lib/auth';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Update user as verified
-        await prisma.user.update({
+        const user = await prisma.user.update({
             where: { email },
             data: { emailVerified: true },
         });
@@ -44,15 +46,58 @@ export async function POST(req: NextRequest) {
             where: { id: verification.id },
         });
 
-        // Send welcome email
-        const user = await prisma.user.findUnique({
-            where: { email },
-            select: { name: true, email: true },
-        });
+        // Create a session for the user using Better Auth
+        // This ensures user is logged in after verification
+        try {
+            // Get the account for this user to find their password hash (if email/password auth)
+            const account = await prisma.account.findFirst({
+                where: { userId: user.id, providerId: 'credential' }
+            });
 
-        if (user) {
-            await sendWelcomeEmail(user.email, user.name || undefined);
+            if (account) {
+                // Create session directly in the database
+                const sessionToken = crypto.randomUUID();
+                const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+                await prisma.session.create({
+                    data: {
+                        id: crypto.randomUUID(),
+                        userId: user.id,
+                        token: sessionToken,
+                        expiresAt,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    }
+                });
+
+                // Set the session cookie
+                const response = NextResponse.json({
+                    success: true,
+                    message: 'Email verified successfully',
+                    userId: user.id,
+                });
+
+                // Set the auth cookie (Better Auth uses this cookie name)
+                response.cookies.set('better-auth.session_token', sessionToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'lax',
+                    path: '/',
+                    expires: expiresAt,
+                });
+
+                // Send welcome email
+                await sendWelcomeEmail(user.email, user.name || undefined, false);
+
+                return response;
+            }
+        } catch (sessionError) {
+            console.error('Session creation error:', sessionError);
+            // Continue without session - user will need to log in
         }
+
+        // Fallback: Send welcome email even if session creation fails
+        await sendWelcomeEmail(user.email, user.name || undefined, false);
 
         return NextResponse.json({
             success: true,
@@ -66,3 +111,4 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+
