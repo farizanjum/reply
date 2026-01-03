@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 import { delegationAuthPlugin } from "./auth-delegation-plugin";
+import { sendWelcomeEmail } from "./email";
 
 // Only initialize Prisma if DATABASE_URL is available (skip during build)
 import { prisma } from './prisma';
@@ -17,6 +18,21 @@ export const auth = betterAuth({
     database: prisma ? prismaAdapter(prisma, {
         provider: "postgresql",
     }) : undefined as any, // Fallback for build time
+
+    // Database hooks - send welcome email when a new user is created
+    databaseHooks: {
+        user: {
+            create: {
+                after: async (user) => {
+                    // Send welcome email to new users (works for both OAuth and email/password signups)
+                    if (user.email) {
+                        console.log(`[Auth] Sending welcome email to new user: ${user.email}`);
+                        await sendWelcomeEmail(user.email, user.name || undefined);
+                    }
+                },
+            },
+        },
+    },
 
     // Add delegation auth plugin
     plugins: [delegationAuthPlugin],
