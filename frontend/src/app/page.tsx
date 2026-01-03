@@ -375,7 +375,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-tighter">reply.</span>
-            <span className="text-xs text-[#52525B]">© 2025</span>
+            <span className="text-xs text-[#52525B]">© 2026</span>
           </div>
           <div className="flex gap-8 text-sm text-[#A1A1AA]">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>

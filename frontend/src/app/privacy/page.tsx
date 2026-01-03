@@ -24,7 +24,7 @@ export default function PrivacyPage() {
             <main className="relative z-10 max-w-4xl mx-auto px-6 py-16">
                 <div className="mb-12">
                     <h1 className="text-4xl sm:text-5xl font-bold mb-4 tracking-tight">Privacy Policy</h1>
-                    <p className="text-[#A1A1AA]">Last updated: December 14, 2024</p>
+                    <p className="text-[#A1A1AA]">Last updated: January 1, 2026</p>
                 </div>
 
                 <div className="prose prose-invert prose-lg max-w-none space-y-8">
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
                             <li><strong className="text-white">Revoke Access:</strong> Disconnect your Google account and revoke OAuth permissions at any time through your Google Account settings.</li>
                         </ul>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            To exercise these rights, please contact us at privacy@reply.app or use the account settings within the Service.
+                            To exercise these rights, please contact us at privacy@tryreply.app or use the account settings within the Service.
                         </p>
                     </section>
 
@@ -168,7 +168,7 @@ export default function PrivacyPage() {
                         </p>
                         <div className="bg-white/5 border border-white/10 rounded-lg p-6">
                             <p className="text-white font-medium">Reply Support</p>
-                            <p className="text-[#A1A1AA]">Email: privacy@reply.app</p>
+                            <p className="text-[#A1A1AA]">Email: privacy@tryreply.app</p>
                             <p className="text-[#A1A1AA]">Response Time: Within 48 hours</p>
                         </div>
                     </section>
@@ -178,7 +178,7 @@ export default function PrivacyPage() {
             {/* Footer */}
             <footer className="border-t border-white/5 py-8 mt-16">
                 <div className="max-w-4xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-sm text-[#52525B]">© 2025 Reply. All rights reserved.</p>
+                    <p className="text-sm text-[#52525B]">© 2026 Reply. All rights reserved.</p>
                     <div className="flex items-center gap-6">
                         <Link href="/privacy" className="text-sm text-[#52525B] hover:text-white transition-colors">Privacy</Link>
                         <Link href="/terms" className="text-sm text-[#52525B] hover:text-white transition-colors">Terms</Link>

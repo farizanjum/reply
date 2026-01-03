@@ -24,7 +24,7 @@ export default function TermsPage() {
             <main className="relative z-10 max-w-4xl mx-auto px-6 py-16">
                 <div className="mb-12">
                     <h1 className="text-4xl sm:text-5xl font-bold mb-4 tracking-tight">Terms of Service</h1>
-                    <p className="text-[#A1A1AA]">Last updated: December 14, 2024</p>
+                    <p className="text-[#A1A1AA]">Last updated: January 1, 2026</p>
                 </div>
 
                 <div className="prose prose-invert prose-lg max-w-none space-y-8">
@@ -248,7 +248,7 @@ export default function TermsPage() {
                         </p>
                         <div className="bg-white/5 border border-white/10 rounded-lg p-6">
                             <p className="text-white font-medium">Reply Legal</p>
-                            <p className="text-[#A1A1AA]">Email: legal@reply.app</p>
+                            <p className="text-[#A1A1AA]">Email: legal@tryreply.app</p>
                             <p className="text-[#A1A1AA]">Response Time: Within 5 business days</p>
                         </div>
                     </section>
@@ -258,7 +258,7 @@ export default function TermsPage() {
             {/* Footer */}
             <footer className="border-t border-white/5 py-8 mt-16">
                 <div className="max-w-4xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-sm text-[#52525B]">© 2025 Reply. All rights reserved.</p>
+                    <p className="text-sm text-[#52525B]">© 2026 Reply. All rights reserved.</p>
                     <div className="flex items-center gap-6">
                         <Link href="/privacy" className="text-sm text-[#52525B] hover:text-white transition-colors">Privacy</Link>
                         <Link href="/terms" className="text-sm text-[#52525B] hover:text-white transition-colors">Terms</Link>

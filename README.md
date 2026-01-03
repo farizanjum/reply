@@ -2,43 +2,43 @@
 
 A fully automated system that monitors your YouTube videos 24/7 and replies to comments based on keywords with human-like behavior.
 
-## 🎯 What It Does
+## What It Does
 
-- ✅ Monitors your YouTube channel videos automatically
-- ✅ Filters comments by custom keywords (e.g., "MCP", "help", "tutorial")
-- ✅ Replies automatically with customizable templates
-- ✅ Prevents duplicate replies with sub-millisecond database checks
-- ✅ Uses human-like delays to avoid YouTube ban
-- ✅ Tracks quota usage (10,000 units/day limit)
-- ✅ Provides analytics dashboard
+- Monitors your YouTube channel videos automatically
+- Filters comments by custom keywords (e.g., "MCP", "help", "tutorial")
+- Replies automatically with customizable templates
+- Prevents duplicate replies with sub-millisecond database checks
+- Uses human-like delays to avoid YouTube ban
+- Tracks quota usage (10,000 units/day limit)
+- Provides analytics dashboard
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌─────────────────┐
-│   Next.js       │  Frontend (Vercel)
-│   Frontend      │  - Video management
-│   (Vercel)      │  - Settings UI
-└────────┬────────┘  - Analytics
-         │
-         │ HTTPS/REST
-         ▼
-┌─────────────────┐
-│   FastAPI       │  Backend (Heroku)
-│   Backend       │  - OAuth authentication
-│   (Heroku)      │  - YouTube API integration
-└────────┬────────┘  - Auto-reply engine
-         │
-    ┌────┴────┬──────────┬──────────┐
-    │         │          │          │
-    ▼         ▼          ▼          ▼
-┌────────┐ ┌──────┐ ┌────────┐ ┌─────────┐
-│Postgres│ │Redis │ │YouTube │ │Scheduler│
-│  (DB)  │ │(Cache)│ │  API   │ │ (Cron) │
-└────────┘ └──────┘ └────────┘ └─────────┘
++------------------+
+|   Next.js        |  Frontend (Vercel)
+|   Frontend       |  - Video management
+|   (Vercel)       |  - Settings UI
++--------+---------+  - Analytics
+         |
+         | HTTPS/REST
+         v
++------------------+
+|   FastAPI        |  Backend (Heroku)
+|   Backend        |  - OAuth authentication
+|   (Heroku)       |  - YouTube API integration
++--------+---------+  - Auto-reply engine
+         |
+    +----+----+----------+----------+
+    |         |          |          |
+    v         v          v          v
++--------+ +------+ +--------+ +---------+
+|Postgres| |Redis | |YouTube | |Scheduler|
+|  (DB)  | |(Cache)| |  API   | | (Cron) |
++--------+ +------+ +--------+ +---------+
 ```
 
-## 💰 Cost Breakdown
+## Cost Breakdown
 
 | Service | Plan | Cost/Month |
 |---------|------|------------|
@@ -49,7 +49,7 @@ A fully automated system that monitors your YouTube videos 24/7 and replies to c
 | Vercel (Frontend) | Hobby | FREE |
 | **TOTAL** | | **$13/month** |
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone Repository
 
@@ -99,7 +99,7 @@ heroku config:set SECRET_KEY="$(openssl rand -hex 32)"
 git push heroku main
 ```
 
-### 4. Frontend Setup (Coming Soon)
+### 4. Frontend Setup
 
 ```bash
 cd frontend
@@ -107,7 +107,7 @@ npm install
 npm run dev
 ```
 
-## 📋 Features
+## Features
 
 ### Core Features
 
@@ -145,7 +145,7 @@ npm run dev
    - Week 4: 100 replies/day
    - Week 5+: 180 replies/day
 
-## 🔧 Configuration
+## Configuration
 
 ### Video Settings
 
@@ -176,7 +176,7 @@ Required variables:
 - `FRONTEND_URL` - Frontend URL
 - `REDIRECT_URI` - OAuth redirect
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 - **Duplicate Check**: < 1ms per lookup
 - **Batch Check**: 2-5ms for 100 comments
@@ -184,7 +184,7 @@ Required variables:
 - **Daily Capacity**: 150-180 replies/day (within quota)
 - **Uptime**: 99.9% (Heroku SLA)
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 reply-comments/
@@ -208,21 +208,21 @@ reply-comments/
 │   │   └── auth_middleware.py
 │   └── scripts/            # Background jobs
 │       └── auto_reply_job.py
-├── frontend/               # Next.js frontend (TBD)
+├── frontend/               # Next.js frontend
 ├── DEPLOYMENT_GUIDE.md     # Deployment instructions
 └── README.md               # This file
 ```
 
-## 🔐 Security
+## Security
 
-- ✅ OAuth 2.0 authentication
-- ✅ JWT token-based sessions
-- ✅ Environment variable secrets
-- ✅ HTTPS only in production
-- ✅ CORS protection
-- ✅ SQL injection prevention (parameterized queries)
+- OAuth 2.0 authentication
+- JWT token-based sessions
+- Environment variable secrets
+- HTTPS only in production
+- CORS protection
+- SQL injection prevention (parameterized queries)
 
-## 📈 Monitoring
+## Monitoring
 
 ### View Logs
 
@@ -253,7 +253,7 @@ heroku redis:cli
 > GET quota:daily
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -273,13 +273,13 @@ heroku redis:cli
    - Verify job configuration
    - Check Heroku Scheduler dashboard
 
-## 📚 Documentation
+## Documentation
 
 - [Backend README](./backend/README.md)
 - [Deployment Guide](./DEPLOYMENT_GUIDE.md)
 - [API Documentation](https://youtube-autoreply-api.herokuapp.com/docs)
 
-## 🛠️ Development
+## Development
 
 ### Run Tests
 
@@ -301,11 +301,11 @@ flake8 .
 mypy .
 ```
 
-## 📝 License
+## License
 
 MIT License - see LICENSE file
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
@@ -313,14 +313,14 @@ MIT License - see LICENSE file
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
 
-## 📞 Support
+## Support
 
 For issues or questions:
 1. Check documentation
 2. Review logs
 3. Open GitHub issue
 
-## 🎉 Acknowledgments
+## Acknowledgments
 
 - FastAPI for the amazing framework
 - Heroku for reliable hosting
@@ -329,4 +329,4 @@ For issues or questions:
 
 ---
 
-**Built with ❤️ for YouTube creators**
+**Built with love for YouTube creators**
