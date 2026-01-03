@@ -121,15 +121,19 @@ export default function ConnectYouTubePage() {
                         </p>
                     </div>
 
-                    {/* Skip Option - Only if they want to explore first */}
+                    {/* Skip Option - Subtle but available for better UX */}
                     {session?.user && (
-                        <div className="mt-6 text-center">
+                        <div className="mt-8 text-center">
                             <button
                                 onClick={() => router.push('/dashboard')}
-                                className="text-sm text-neutral-500 hover:text-white transition-colors"
+                                className="group relative inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-neutral-400 hover:text-white transition-all duration-300 rounded-lg border border-neutral-800 hover:border-neutral-600 bg-transparent hover:bg-neutral-900/50"
                             >
-                                Skip for now
+                                <span>I'll connect later</span>
+                                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                             </button>
+                            <p className="text-xs text-neutral-600 mt-2">
+                                You can connect anytime from settings
+                            </p>
                         </div>
                     )}
                 </CardSpotlight>
