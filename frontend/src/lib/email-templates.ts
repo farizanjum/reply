@@ -242,15 +242,36 @@ export function generateOTPEmail(otp: string, email: string) {
 }
 
 // Welcome Email Template (after verification)
-export function generateWelcomeEmail(name: string) {
+export function generateWelcomeEmail(name: string, isYouTubeConnected: boolean = false) {
+  const dashboardUrl = 'https://www.tryreply.app/dashboard';
   const connectUrl = 'https://www.tryreply.app/auth/connect-youtube';
+
+  // Different content based on whether YouTube is already connected (OAuth users)
+  const buttonText = isYouTubeConnected ? 'Go to Dashboard' : 'Connect YouTube Channel';
+  const buttonUrl = isYouTubeConnected ? dashboardUrl : connectUrl;
+
+  const steps = isYouTubeConnected
+    ? `
+        <div class="step-item">1. Set up your auto-reply keywords</div>
+        <div class="step-item">2. Customize your reply templates</div>
+        <div class="step-item">3. Enable auto-reply on your videos</div>
+        <div class="step-item">4. Watch the engagement roll in</div>
+      `
+    : `
+        <div class="step-item">1. Connect your YouTube channel</div>
+        <div class="step-item">2. Set up your auto-reply keywords</div>
+        <div class="step-item">3. Customize your reply templates</div>
+        <div class="step-item">4. Watch the engagement roll in</div>
+      `;
 
   const content = `
     <div class="card">
       <h1 class="title">Welcome</h1>
       <p class="text">
         Hi ${name || 'there'}!<br/><br/>
-        Your email has been verified successfully! You're now ready to start automating your YouTube comment replies.
+        ${isYouTubeConnected
+      ? "You're all set! Your YouTube channel is connected and you're ready to start automating your comment replies."
+      : "Your email has been verified successfully! You're now ready to start automating your YouTube comment replies."}
       </p>
       
       <div class="divider"></div>
@@ -259,15 +280,12 @@ export function generateWelcomeEmail(name: string) {
         Next Steps:
       </p>
       <div class="steps">
-        <div class="step-item">1. Connect your YouTube channel</div>
-        <div class="step-item">2. Set up your auto-reply keywords</div>
-        <div class="step-item">3. Customize your reply templates</div>
-        <div class="step-item">4. Watch the engagement roll in</div>
+        ${steps}
       </div>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${connectUrl}" class="button">
-          Connect YouTube Channel
+        <a href="${buttonUrl}" class="button">
+          ${buttonText}
         </a>
       </div>
       

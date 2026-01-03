@@ -27,7 +27,9 @@ export const auth = betterAuth({
                     // Send welcome email to new users (works for both OAuth and email/password signups)
                     if (user.email) {
                         console.log(`[Auth] Sending welcome email to new user: ${user.email}`);
-                        await sendWelcomeEmail(user.email, user.name || undefined);
+                        // OAuth users have youtubeConnected=true, email/password users have it as false
+                        const isYouTubeConnected = (user as any).youtubeConnected || false;
+                        await sendWelcomeEmail(user.email, user.name || undefined, isYouTubeConnected);
                     }
                 },
             },

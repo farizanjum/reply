@@ -45,13 +45,13 @@ export async function sendOTPEmail(email: string, otp: string) {
 }
 
 // Send welcome email
-export async function sendWelcomeEmail(email: string, name?: string) {
+export async function sendWelcomeEmail(email: string, name?: string, isYouTubeConnected?: boolean) {
     try {
         if (!unosend) {
             console.warn('Email service not configured (UNOSEND_API_KEY missing)');
             return { success: false, error: 'Email service not configured' };
         }
-        const html = generateWelcomeEmail(name || email.split('@')[0]);
+        const html = generateWelcomeEmail(name || email.split('@')[0], isYouTubeConnected || false);
 
         const { data, error } = await unosend.emails.send({
             from: `Fariz from reply. <${WELCOME_EMAIL}>`,
