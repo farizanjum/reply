@@ -34,6 +34,11 @@ export default function SettingsPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+    // YouTube connection state
+    const [youtubeConnected, setYoutubeConnected] = useState<boolean>(user?.youtubeConnected ?? true);
+    const [isDisconnecting, setIsDisconnecting] = useState(false);
+    const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+
     // Re-auth modal state
     const [showReAuthModal, setShowReAuthModal] = useState(false);
     const [pendingAction, setPendingAction] = useState<'remove-password' | 'link-google' | null>(null);
@@ -51,6 +56,40 @@ export default function SettingsPage() {
     useEffect(() => {
         checkPasswordStatus();
     }, []);
+
+    // Update YouTube connection status when user changes
+    useEffect(() => {
+        if (user) {
+            setYoutubeConnected(user.youtubeConnected ?? true);
+        }
+    }, [user]);
+
+    // YouTube disconnect handler
+    const handleDisconnectYouTube = async () => {
+        setIsDisconnecting(true);
+        setStatusMessage(null);
+
+        try {
+            const response = await fetch('/api/youtube/disconnect', {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setYoutubeConnected(false);
+                setShowDisconnectConfirm(false);
+                setStatusMessage({ type: 'success', text: data.message });
+            } else {
+                setStatusMessage({ type: 'error', text: data.error || 'Failed to disconnect' });
+            }
+        } catch (error) {
+            setStatusMessage({ type: 'error', text: 'Failed to disconnect YouTube' });
+        } finally {
+            setIsDisconnecting(false);
+        }
+    };
 
     // Block delegation users from settings
     if (isDelegation) {
@@ -312,22 +351,80 @@ export default function SettingsPage() {
 
                         <div className="space-y-4">
                             {/* Google/YouTube Connection */}
-                            <div className="flex items-center justify-between p-4 bg-[#0A0A0A] rounded-xl border border-white/5">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center">
-                                        <Youtube className="w-5 h-5 text-red-500" />
+                            <div className="p-4 bg-[#0A0A0A] rounded-xl border border-white/5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center">
+                                            <Youtube className="w-5 h-5 text-red-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Google / YouTube</p>
+                                            <p className="text-xs text-[#A1A1AA]">
+                                                {youtubeConnected
+                                                    ? (user?.channelName || user?.email || 'Connected for YouTube access')
+                                                    : 'Not connected - Connect to manage videos'}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-white">Google / YouTube</p>
-                                        <p className="text-xs text-[#A1A1AA]">
-                                            {user?.channelName || user?.email || 'Connected for YouTube access'}
-                                        </p>
+                                    {youtubeConnected ? (
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2 text-green-500">
+                                                <Check className="w-4 h-4" />
+                                                <span className="text-xs font-medium">Connected</span>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => setShowDisconnectConfirm(true)}
+                                                className="text-xs text-neutral-400 hover:text-red-400"
+                                            >
+                                                Disconnect
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            variant="primary"
+                                            onClick={() => router.push('/auth/connect-youtube')}
+                                        >
+                                            Connect
+                                        </Button>
+                                    )}
+                                </div>
+
+                                {/* Disconnect Confirmation */}
+                                {showDisconnectConfirm && (
+                                    <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                        <div className="flex items-start gap-3">
+                                            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-red-400 mb-1">Disconnect YouTube?</p>
+                                                <p className="text-xs text-[#A1A1AA] mb-3">
+                                                    {hasPassword
+                                                        ? 'Your YouTube connection will be removed. You can reconnect anytime.'
+                                                        : 'Your YouTube access will be revoked, but you\'ll still use Google to log in.'}
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="danger"
+                                                        onClick={handleDisconnectYouTube}
+                                                        disabled={isDisconnecting}
+                                                    >
+                                                        {isDisconnecting ? 'Disconnecting...' : 'Yes, Disconnect'}
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => setShowDisconnectConfirm(false)}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-2 text-green-500">
-                                    <Check className="w-4 h-4" />
-                                    <span className="text-xs font-medium">Connected</span>
-                                </div>
+                                )}
                             </div>
 
                             {/* Delegation Password Status */}

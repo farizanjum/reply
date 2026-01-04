@@ -8,41 +8,77 @@ class QuotaManager:
     
     def __init__(self):
         self.daily_limit = settings.DAILY_QUOTA_LIMIT
+        self.user_daily_limit = settings.USER_DAILY_REPLY_LIMIT
+    
+    async def get_user_usage(self, user_id: int) -> int:
+        """Get THIS user's quota usage today (for per-user analytics)"""
+        pool = get_pool()
+        today = date.today()
+        
+        query = """
+            SELECT daily_quota_used FROM users 
+            WHERE id = $1 AND last_quota_reset = $2
+        """
+        
+        usage = 0
+        try:
+            if pool:
+                async with pool.acquire() as conn:
+                    val = await conn.fetchval(query, user_id, today)
+                    usage = val or 0
+            else:
+                async with get_direct_connection() as conn:
+                    val = await conn.fetchval(query, user_id, today)
+                    usage = val or 0
+        except Exception as e:
+            print(f"Error reading user quota: {e}")
+            
+        return usage
+    
+    async def get_user_reply_count(self, user_id: int) -> int:
+        """Get THIS user's reply count today (for dashboard display)"""
+        pool = get_pool()
+        today = date.today()
+        
+        # Count actual replies sent today
+        query = """
+            SELECT COUNT(*) FROM replied_comments 
+            WHERE user_id = $1 AND DATE(replied_at) = $2
+        """
+        
+        count = 0
+        try:
+            if pool:
+                async with pool.acquire() as conn:
+                    val = await conn.fetchval(query, user_id, today)
+                    count = val or 0
+            else:
+                async with get_direct_connection() as conn:
+                    val = await conn.fetchval(query, user_id, today)
+                    count = val or 0
+        except Exception as e:
+            print(f"Error reading user reply count: {e}")
+            
+        return count
+    
+    async def can_user_reply(self, user_id: int) -> bool:
+        """Check if user hasn't exceeded their daily limit"""
+        user_replies_today = await self.get_user_reply_count(user_id)
+        return user_replies_today < self.user_daily_limit
+    
+    async def get_user_remaining_replies(self, user_id: int) -> int:
+        """Get how many replies user can still send today"""
+        user_replies_today = await self.get_user_reply_count(user_id)
+        return max(0, self.user_daily_limit - user_replies_today)
     
     async def get_current_usage(self, user_id: int = None) -> int:
-        """Get today's quota usage from DB (global or per user if expanded)"""
-        # For now, we simulate global quota by summing users or using a single user for single-tenant
-        # But wait, original implementation was GLOBAL in-memory.
-        # Users reported "Quota limit not increasing". 
-        # If we act as single tenant, we can just check the first user or aggregate?
-        # Let's use the DB. But without a specific user_id context in some calls, it's tricky.
-        
-        # However, looking at usage:
-        # engine = ReplyEngine(youtube, quota_mgr)
-        # engine.reply_to_comments_batch -> calls track_request(cost)
-        
-        # We need to switch context to persistent storage. 
-        # Since we are single-tenant mostly (or the user implies "MY quota"), 
-        # we can sum up 'daily_quota_used' from all users or tracking table?
-        # Actually, API quota is per PROJECT (Application), not per user.
-        # So we should validly track GLOBAL usage.
-        
-        # Problem: DB is user-centric. 
-        # Solution: Create a 'system_settings' table or just use an in-memory fallback backed by Redis?
-        # User said "Quota limit not increasing".
-        # If we use Redis, it persists. 
-        
-        # Let's try to use Redis if available, else DB fallback (maybe store on user 1?)
-        # Or simpler: The user is likely the ONLY user (Fariz).
-        # Let's aggregate ALL users' daily_quota_used as the total usage.
-        
+        """Get today's quota usage from DB (global for project monitoring)"""
+        # For global project monitoring - sums ALL users
+        # Used for internal admin checks, not user-facing
         pool = get_pool()
         today = date.today()
         
         query = "SELECT SUM(daily_quota_used) FROM users WHERE last_quota_reset = $1"
-        
-        # Reset logic handled in track_request usually, but here we just read.
-        # If date mismatch, count is effective 0.
         
         usage = 0
         try:
@@ -60,24 +96,16 @@ class QuotaManager:
         return usage
     
     async def can_make_request(self, cost: int, user_id: int = None) -> bool:
-        """Check if request can be made"""
+        """Check if request can be made (global project limit)"""
         current = await self.get_current_usage()
         return (current + cost) <= self.daily_limit
     
     async def track_request(self, cost: int, user_id: int = None):
         """Track API request - persist to DB"""
-        # We need a user_id to attribute usage to!
-        # If user_id is None, we might fail to track if we rely on 'users' table.
-        # In `reply_engine.py`, does it pass user_id?
-        # Let's check reply_engine.py usage.
-        
-        # If user_id provided:
         if user_id:
             pool = get_pool()
             today = date.today()
             
-            # Logic: Update user's quota. If date changed, reset and add cost.
-            # Handles DB side.
             query = """
                 UPDATE users 
                 SET daily_quota_used = CASE 
@@ -97,11 +125,9 @@ class QuotaManager:
                         await conn.execute(query, user_id, today, cost)
             except Exception as e:
                 print(f"Error tracking quota: {e}")
-        else:
-            # Fallback if no user_id (shouldn't happen in video context)
-            pass
 
     async def get_remaining_quota(self) -> int:
-        """Get remaining quota"""
+        """Get remaining global quota (for admin monitoring)"""
         used = await self.get_current_usage()
         return self.daily_limit - used
+

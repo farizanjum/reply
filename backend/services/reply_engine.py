@@ -113,7 +113,15 @@ class ReplyEngine:
                     comment_id = comment['id']
                     snippet = comment['snippet']['topLevelComment']['snippet']
                     
-                    # Check quota
+                    # Check user's daily limit first
+                    if not await self.quota_manager.can_user_reply(user_id):
+                        return {
+                            "success": False,
+                            "comment_id": comment_id,
+                            "error": "Daily limit reached (500 replies/day)"
+                        }
+                    
+                    # Check global quota
                     if not await self.quota_manager.can_make_request(50):
                         return {
                             "success": False,

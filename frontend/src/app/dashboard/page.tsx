@@ -79,15 +79,14 @@ export default function DashboardPage() {
     ];
 
     // Check if YouTube is connected
-    // If user logged in via Google OAuth (has Google profile image), they ARE connected to YouTube
-    // For email/password users, they need to explicitly connect YouTube
+    // Use ONLY the youtubeConnected flag from the database
+    // This is set when: (1) User logs in via Google OAuth with YouTube scopes granted
+    // or (2) Email user explicitly connects YouTube
     const userWithExtras = session?.user as any;
 
-    // Google OAuth users have a profile image from googleusercontent.com
-    const isGoogleOAuthUser = userWithExtras?.image?.includes('googleusercontent.com');
-
-    // YouTube is connected if: logged in via Google OAuth OR has explicit youtubeConnected flag
-    const youtubeConnected = isGoogleOAuthUser || userWithExtras?.youtubeConnected === true;
+    // Don't use image URL check - it's unreliable
+    // The youtubeConnected flag is set properly during OAuth callback
+    const youtubeConnected = userWithExtras?.youtubeConnected === true;
 
     // Show skeleton while data is initially loading (but not on refetch)
     const isInitialLoading = (analyticsLoading || videosLoading) && !analytics && !videosData;

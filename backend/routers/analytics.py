@@ -32,14 +32,16 @@ async def get_analytics(authorization: str = Header(None)):
     # Get reply stats
     stats_7d = await get_reply_stats(user['id'], days=7)
     
-    # Get quota usage
+    # Get per-user quota usage (not global)
     quota_mgr = await get_quota_manager()
-    if settings.USE_REDIS:
-        quota_used = await quota_mgr.get_current_usage(user['id'])
-        quota_remaining = await quota_mgr.get_remaining_quota(user['id'])
-    else:
-        quota_used = await quota_mgr.get_current_usage()
-        quota_remaining = await quota_mgr.get_remaining_quota()
+    
+    # Get THIS user's reply count today and remaining
+    user_replies_today = await quota_mgr.get_user_reply_count(user['id'])
+    user_remaining = await quota_mgr.get_user_remaining_replies(user['id'])
+    user_daily_limit = quota_mgr.user_daily_limit
+    
+    # Calculate percentage of user's daily limit used
+    user_quota_percent = int((user_replies_today / user_daily_limit) * 100) if user_daily_limit > 0 else 0
     
     # Get recent replies (using the db abstraction)
     recent_replies = await get_recent_replies(user['id'], limit=50)
@@ -52,10 +54,12 @@ async def get_analytics(authorization: str = Header(None)):
     
     return {
         "total_replies": stats_7d.get('total_replies', 0) if stats_7d else 0,
-        "replies_today": 0,
+        "replies_today": user_replies_today,
         "replies_this_week": stats_7d.get('total_replies', 0) if stats_7d else 0,
-        "quota_used": int((quota_used / 10000) * 100),
-        "quota_units_used": quota_used,
+        "quota_used": user_quota_percent,
+        "quota_units_used": user_replies_today,
+        "user_daily_limit": user_daily_limit,
+        "user_remaining": user_remaining,
         "recent_replies": recent_replies
     }
 
