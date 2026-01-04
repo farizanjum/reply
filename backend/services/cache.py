@@ -153,6 +153,7 @@ class QuotaManager:
     def __init__(self, cache: CacheManager):
         self.cache = cache
         self.daily_limit = settings.DAILY_QUOTA_LIMIT
+        self.user_daily_limit = settings.USER_DAILY_REPLY_LIMIT
     
     def _get_quota_key(self, user_id: Optional[int] = None) -> str:
         """Get quota key for today"""
@@ -166,6 +167,28 @@ class QuotaManager:
         key = self._get_quota_key(user_id)
         usage = await self.cache.redis.get(key)
         return int(usage) if usage else 0
+    
+    async def get_user_reply_count(self, user_id: int) -> int:
+        """Get THIS user's reply count today from Redis"""
+        # Use the user-specific quota key which tracks reply count
+        key = self._get_quota_key(user_id)
+        count = await self.cache.redis.get(key)
+        # Note: In Redis mode, we track quota units, not reply count
+        # Each reply costs 50 units, so we divide by 50 to get approximate reply count
+        # For exact count, we fall back to DB
+        from db import get_reply_stats
+        stats = await get_reply_stats(user_id, days=1)
+        return stats.get('total_replies', 0) if stats else 0
+    
+    async def can_user_reply(self, user_id: int) -> bool:
+        """Check if user hasn't exceeded their daily limit"""
+        user_replies_today = await self.get_user_reply_count(user_id)
+        return user_replies_today < self.user_daily_limit
+    
+    async def get_user_remaining_replies(self, user_id: int) -> int:
+        """Get how many replies user can still send today"""
+        user_replies_today = await self.get_user_reply_count(user_id)
+        return max(0, self.user_daily_limit - user_replies_today)
     
     async def can_make_request(self, cost: int, user_id: Optional[int] = None) -> bool:
         """Check if request can be made within quota"""
