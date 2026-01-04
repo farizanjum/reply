@@ -4,16 +4,11 @@ import { useSession } from '@/lib/auth-client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Menu, Youtube } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Sidebar, MobileSidebar } from '@/components/layout/Sidebar';
 import { cn } from '@/lib/utils';
-
-// YouTube connection context for optimistic UI updates
-interface YouTubeState {
-    connected: boolean;
-    channelName: string | null;
-}
+import { useYouTubeSync } from '@/lib/useYouTubeSync';
 
 export default function DashboardLayout({
     children,
@@ -27,8 +22,8 @@ export default function DashboardLayout({
     const [collapsed, setCollapsed] = useState(false);     // Desktop collapse
     const [mounted, setMounted] = useState(false);
 
-    // Optimistic YouTube state - updated from sync API response
-    const [youtubeState, setYouTubeState] = useState<YouTubeState | null>(null);
+    // Multi-tab sync hook - broadcasts state changes to other tabs
+    const { syncState, broadcast } = useYouTubeSync();
 
     useEffect(() => {
         setMounted(true);
@@ -42,7 +37,7 @@ export default function DashboardLayout({
     }, [mounted, isPending, session, router]);
 
     // Sync YouTube tokens to backend on every dashboard visit
-    // Uses OPTIMISTIC UI from API response - no DB re-fetch
+    // Uses OPTIMISTIC UI from API response + broadcasts to other tabs
     useEffect(() => {
         if (session?.user?.id) {
             fetch('/api/sync/youtube-tokens', {
@@ -51,9 +46,9 @@ export default function DashboardLayout({
             })
                 .then(res => res.json())
                 .then((data) => {
-                    // Optimistic update from API response
+                    // Optimistic update from API response + broadcast to other tabs
                     if (data.youtubeConnected !== undefined) {
-                        setYouTubeState({
+                        broadcast({
                             connected: data.youtubeConnected,
                             channelName: data.channelName || null
                         });
@@ -61,7 +56,7 @@ export default function DashboardLayout({
                 })
                 .catch(() => { });
         }
-    }, [session?.user?.id]);
+    }, [session?.user?.id, broadcast]);
 
     // Show loading while session is being checked
     if (!mounted || isPending || !session) {
@@ -131,3 +126,4 @@ export default function DashboardLayout({
         </div>
     );
 }
+
