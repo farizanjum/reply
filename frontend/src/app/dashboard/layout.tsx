@@ -9,6 +9,12 @@ import { motion } from 'framer-motion';
 import { Sidebar, MobileSidebar } from '@/components/layout/Sidebar';
 import { cn } from '@/lib/utils';
 
+// YouTube connection context for optimistic UI updates
+interface YouTubeState {
+    connected: boolean;
+    channelName: string | null;
+}
+
 export default function DashboardLayout({
     children,
 }: {
@@ -20,6 +26,9 @@ export default function DashboardLayout({
     const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile drawer
     const [collapsed, setCollapsed] = useState(false);     // Desktop collapse
     const [mounted, setMounted] = useState(false);
+
+    // Optimistic YouTube state - updated from sync API response
+    const [youtubeState, setYouTubeState] = useState<YouTubeState | null>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -33,15 +42,23 @@ export default function DashboardLayout({
     }, [mounted, isPending, session, router]);
 
     // Sync YouTube tokens to backend on every dashboard visit
+    // Uses OPTIMISTIC UI from API response - no DB re-fetch
     useEffect(() => {
         if (session?.user?.id) {
-            // Always sync tokens to ensure backend has fresh tokens
             fetch('/api/sync/youtube-tokens', {
                 method: 'POST',
                 credentials: 'include'
             })
                 .then(res => res.json())
-                .then(() => { })
+                .then((data) => {
+                    // Optimistic update from API response
+                    if (data.youtubeConnected !== undefined) {
+                        setYouTubeState({
+                            connected: data.youtubeConnected,
+                            channelName: data.channelName || null
+                        });
+                    }
+                })
                 .catch(() => { });
         }
     }, [session?.user?.id]);

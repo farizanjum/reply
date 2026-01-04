@@ -84,6 +84,8 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
+            youtubeConnected: false, // Optimistic UI - frontend uses this immediately
+            channelName: null,
             message: hasPassword
                 ? 'YouTube disconnected successfully. You can reconnect anytime.'
                 : 'YouTube access revoked. You can reconnect anytime. Note: You still need Google to log in.',

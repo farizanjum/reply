@@ -99,6 +99,24 @@ export const auth = betterAuth({
         },
     },
 
+    // Expose custom user fields in session (Cookie Diet: only critical fields)
+    user: {
+        additionalFields: {
+            youtubeConnected: {
+                type: "boolean",
+                defaultValue: false,
+            },
+            channelName: {
+                type: "string",
+                defaultValue: null,
+            },
+            channelId: {
+                type: "string",
+                defaultValue: null,
+            },
+        },
+    },
+
     // Advanced options for OAuth state management
     advanced: {
         // Use secure cookies only in production

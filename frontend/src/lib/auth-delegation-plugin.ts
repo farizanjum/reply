@@ -41,6 +41,10 @@ export const delegationAuthPlugin = {
                         createdAt: true,
                         updatedAt: true,
                         delegationPassword: true,
+                        // YouTube fields for session state
+                        youtubeConnected: true,
+                        channelName: true,
+                        channelId: true,
                     },
                 });
 
@@ -131,7 +135,12 @@ export const delegationAuthPlugin = {
                         emailVerified: user.emailVerified,
                         createdAt: user.createdAt,
                         updatedAt: user.updatedAt,
-                    },
+                        // YouTube fields for UI state (Cookie Diet: no tokens)
+                        // @ts-ignore - Custom fields from additionalFields in auth.ts
+                        youtubeConnected: user.youtubeConnected || false,
+                        channelName: user.channelName || null,
+                        channelId: user.channelId || null,
+                    } as any,
                 });
 
                 return ctx.json({
