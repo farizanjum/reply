@@ -2,16 +2,20 @@
 
 import { Card, Button } from '@/components/ui';
 import { Settings, User, Bell, Shield, Key, Youtube, LogOut, Link2, Mail, Lock, Plus, Check, Trash2, AlertTriangle, Users, ShieldAlert } from 'lucide-react';
-import { useSession, signOut, signIn } from '@/lib/auth-client';
+import { useSession, signOut, signIn, authClient } from '@/lib/auth-client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ReAuthModal } from '@/components/ui/ReAuthModal';
+import { useYouTubeSync } from '@/lib/useYouTubeSync';
 
 export default function SettingsPage() {
     const router = useRouter();
     const { data: session } = useSession();
     const user = session?.user as any;
     const [activeTab, setActiveTab] = useState('profile');
+
+    // Multi-tab sync for YouTube state
+    const { broadcast } = useYouTubeSync();
 
     // Check if user is accessing via delegation (restricted access)
     const [isDelegation, setIsDelegation] = useState(false);
@@ -78,9 +82,23 @@ export default function SettingsPage() {
             const data = await response.json();
 
             if (response.ok) {
+                // Update local state
                 setYoutubeConnected(false);
                 setShowDisconnectConfirm(false);
+
+                // Broadcast to all other tabs
+                broadcast({ connected: false, channelName: null });
+
+                // Force refresh auth session to update cookie
+                await authClient.getSession();
+
+                // Show success and redirect to dashboard to see banner
                 setStatusMessage({ type: 'success', text: data.message });
+
+                // Navigate to dashboard after short delay so user sees success message
+                setTimeout(() => {
+                    router.push('/dashboard');
+                }, 1500);
             } else {
                 setStatusMessage({ type: 'error', text: data.error || 'Failed to disconnect' });
             }
@@ -407,18 +425,20 @@ export default function SettingsPage() {
                                                 <div className="flex gap-2">
                                                     <Button
                                                         size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => setShowDisconnectConfirm(false)}
+                                                        autoFocus
+                                                        className="border border-white/20"
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
                                                         variant="danger"
                                                         onClick={handleDisconnectYouTube}
                                                         disabled={isDisconnecting}
                                                     >
                                                         {isDisconnecting ? 'Disconnecting...' : 'Yes, Disconnect'}
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        onClick={() => setShowDisconnectConfirm(false)}
-                                                    >
-                                                        Cancel
                                                     </Button>
                                                 </div>
                                             </div>

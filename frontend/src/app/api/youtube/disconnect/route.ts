@@ -76,10 +76,14 @@ export async function POST(request: NextRequest) {
             console.log(`[Disconnect] Cleared tokens for Google-only user ${userId}`);
         }
 
-        // Set youtubeConnected = false
+        // Set youtubeConnected = false and clear all channel metadata
         await prisma.user.update({
             where: { id: userId },
-            data: { youtubeConnected: false }
+            data: {
+                youtubeConnected: false,
+                channelName: null,
+                channelId: null,
+            }
         });
 
         return NextResponse.json({

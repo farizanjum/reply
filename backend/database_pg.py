@@ -221,10 +221,13 @@ async def init_db():
 
 async def close_db():
     """Close the connection pool"""
-    global pool
+    global pool, worker_pool
     if pool:
         await pool.close()
         print("✓ PostgreSQL connection pool closed")
+    if worker_pool:
+        await worker_pool.close()
+        print("✓ PostgreSQL worker pool closed")
 
 
 def get_pool() -> Pool:
@@ -242,9 +245,19 @@ async def get_db_connection():
         yield conn
 
 
-@asynccontextmanager
-async def get_direct_connection():
-    """Get a direct connection (not from pool) - for Celery tasks"""
+# Worker pool for Celery tasks - prevents connection exhaustion
+worker_pool: Optional[Pool] = None
+
+
+async def get_or_create_worker_pool() -> Pool:
+    """Get or create a dedicated connection pool for Celery workers.
+    This prevents the TooManyConnectionsError by reusing connections.
+    """
+    global worker_pool
+    
+    if worker_pool is not None:
+        return worker_pool
+    
     import ssl
     
     # Create SSL context for Heroku Postgres
@@ -254,11 +267,29 @@ async def get_direct_connection():
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
     
-    conn = await asyncpg.connect(dsn=settings.db_url, ssl=ssl_context)
-    try:
+    # Worker pool: very conservative settings for Celery
+    # Max 2 connections shared across all worker tasks
+    worker_pool = await asyncpg.create_pool(
+        dsn=settings.db_url,
+        min_size=1,
+        max_size=2,  # Only 2 connections for all Celery tasks
+        max_inactive_connection_lifetime=60,  # Close idle connections quickly
+        command_timeout=60,
+        ssl=ssl_context,
+    )
+    print("✓ Worker connection pool created (max_size=2)")
+    return worker_pool
+
+
+@asynccontextmanager
+async def get_direct_connection():
+    """Get a connection from the worker pool - for Celery tasks.
+    Uses a dedicated pool to prevent connection exhaustion.
+    """
+    worker_p = await get_or_create_worker_pool()
+    async with worker_p.acquire() as conn:
         yield conn
-    finally:
-        await conn.close()
+
 
 
 # ============================================
