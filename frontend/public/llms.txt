@@ -1,0 +1,15 @@
+# reply.
+> YouTube comment auto-reply tool for creators.
+
+Reply helps content creators manage and automate responses to YouTube comments using smart keyword matching and human-like templates.
+
+## Main Features
+- **Auto-Reply:** Automated responses based on keyword matching.
+- **Comment Management:** Organize and view comments from your own videos.
+- **Analytics:** Track reply statistics and engagement metrics.
+- **Data Privacy:** Secure handling of YouTube OAuth tokens and channel metadata.
+
+## Links
+- [Dashboard](https://tryreply.app/dashboard)
+- [Privacy Policy](https://tryreply.app/privacy)
+- [Terms of Service](https://tryreply.app/terms)
