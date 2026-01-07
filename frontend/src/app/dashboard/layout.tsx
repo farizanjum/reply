@@ -177,25 +177,29 @@ function DashboardLayoutInner({
                             {children}
                         </div>
 
-                        <footer className="mt-12 pt-8 pb-4 border-t border-white/5 w-full">
+                        <footer className="mt-12 pt-8 pb-8 border-t border-white/5 w-full">
                             <div className="flex flex-col items-center gap-6">
                                 {/* Developed with YouTube Badge */}
-                                <div className="opacity-80 transition-opacity hover:opacity-100">
+                                <div className="opacity-60 transition-opacity hover:opacity-100 cursor-pointer" title="Developed with YouTube">
                                     <img
                                         src="/developed-with-youtube-sentence-case-light.png"
                                         alt="Developed with YouTube"
-                                        className="h-8 object-contain"
+                                        className="h-6 object-contain"
                                     />
                                 </div>
 
-                                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] text-[#52525B] font-medium tracking-wide">
-                                    <span>© {new Date().getFullYear()} Reply</span>
-                                    <div className="flex items-center gap-4">
-                                        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube Terms of Service</a>
-                                        <span className="w-1 h-1 bg-white/10 rounded-full" />
-                                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Google Privacy Policy</a>
-                                    </div>
-                                    <span className="text-[#3f3f46]">Metrics provided by YouTube</span>
+                                {/* Copyright & Links */}
+                                <div className="flex items-center justify-center gap-4 text-[11px] text-[#52525B] font-medium tracking-wide">
+                                    <span>© Reply. All rights reserved.</span>
+                                    <span className="w-0.5 h-3 bg-white/10" />
+                                    <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
+                                    <span className="w-0.5 h-3 bg-white/10" />
+                                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Google Privacy Policy</a>
+                                </div>
+
+                                {/* Metrics Attribution */}
+                                <div className="text-[10px] text-[#3f3f46] font-medium tracking-wider uppercase opacity-50">
+                                    Metrics provided by YouTube
                                 </div>
                             </div>
                         </footer>
