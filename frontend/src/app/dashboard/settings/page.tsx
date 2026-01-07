@@ -357,7 +357,7 @@ export default function SettingsPage() {
                                 />
                             </div>
                             {youtubeConnected ? (
-                                <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                                <div className="flex items-center gap-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
                                     <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#FF0132] flex items-center justify-center">
                                         <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-7 h-7 object-contain" />
                                     </div>
