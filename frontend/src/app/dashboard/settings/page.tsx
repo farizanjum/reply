@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { ReAuthModal } from '@/components/ui/ReAuthModal';
 import { useYouTubeSync } from '@/lib/useYouTubeSync';
 import { connectYouTube } from '@/lib/youtube-connect';
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -40,7 +41,7 @@ export default function SettingsPage() {
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     // YouTube connection state
-    const [youtubeConnected, setYoutubeConnected] = useState<boolean>(user?.youtubeConnected ?? true);
+    const [youtubeConnected, setYoutubeConnected] = useState<boolean>(user?.youtubeConnected ?? false);
     const [isDisconnecting, setIsDisconnecting] = useState(false);
     const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
 
@@ -65,7 +66,7 @@ export default function SettingsPage() {
     // Update YouTube connection status when user changes
     useEffect(() => {
         if (user) {
-            setYoutubeConnected(user.youtubeConnected ?? true);
+            setYoutubeConnected(user.youtubeConnected ?? false);
         }
     }, [user]);
 
@@ -93,17 +94,25 @@ export default function SettingsPage() {
                 // Force refresh auth session to update cookie
                 await authClient.getSession();
 
-                // Show success and redirect to dashboard to see banner
-                setStatusMessage({ type: 'success', text: data.message });
+                // Show toast notification
+                toast.success('YouTube Disconnected', {
+                    description: data.message || 'You can reconnect anytime.',
+                });
 
-                // Navigate to dashboard after short delay so user sees success message
+                // Navigate to dashboard after short delay
                 setTimeout(() => {
                     router.push('/dashboard');
-                }, 1500);
+                }, 1000);
             } else {
+                toast.error('Disconnect Failed', {
+                    description: data.error || 'Failed to disconnect YouTube',
+                });
                 setStatusMessage({ type: 'error', text: data.error || 'Failed to disconnect' });
             }
         } catch (error) {
+            toast.error('Disconnect Failed', {
+                description: 'An unexpected error occurred',
+            });
             setStatusMessage({ type: 'error', text: 'Failed to disconnect YouTube' });
         } finally {
             setIsDisconnecting(false);

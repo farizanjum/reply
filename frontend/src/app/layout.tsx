@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -41,7 +42,19 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <Toaster
+          position="top-right"
+          theme="dark"
+          toastOptions={{
+            style: {
+              background: '#1a1a1a',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: '#fff',
+            },
+          }}
+        />
       </body>
     </html>
   );
 }
+

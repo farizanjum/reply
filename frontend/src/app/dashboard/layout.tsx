@@ -54,6 +54,12 @@ function DashboardLayoutInner({
                 .then((data) => {
                     if (data.success) {
                         console.log('[Dashboard] Reconnection successful:', data);
+                        // Show success toast
+                        import('sonner').then(({ toast }) => {
+                            toast.success('YouTube Connected', {
+                                description: `Connected as ${data.channelName || 'your channel'}`,
+                            });
+                        });
                         // Broadcast to other tabs
                         broadcast({
                             connected: true,
@@ -61,6 +67,11 @@ function DashboardLayoutInner({
                         });
                     } else {
                         console.error('[Dashboard] Reconnection failed:', data.error);
+                        import('sonner').then(({ toast }) => {
+                            toast.error('Connection Failed', {
+                                description: data.error || 'Failed to connect YouTube',
+                            });
+                        });
                     }
 
                     // Clean up URL param
@@ -70,6 +81,11 @@ function DashboardLayoutInner({
                 })
                 .catch((error) => {
                     console.error('[Dashboard] Reconnection error:', error);
+                    import('sonner').then(({ toast }) => {
+                        toast.error('Connection Failed', {
+                            description: 'An unexpected error occurred',
+                        });
+                    });
                 });
         }
     }, [searchParams, session?.user?.id, router, broadcast]);
