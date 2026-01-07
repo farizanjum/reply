@@ -177,25 +177,42 @@ function DashboardLayoutInner({
                             {children}
                         </div>
 
-                        <footer className="mt-auto pt-12 pb-6 w-full">
-                            <div className="flex flex-col items-center gap-4">
-                                {/* Developed with YouTube Badge - Larger & Visible */}
-                                <div className="hover:opacity-100 transition-opacity cursor-pointer">
+                        <footer className="mt-auto pt-20 pb-8 w-full border-t border-white/5">
+                            <div className="flex flex-col items-center justify-center text-center gap-8">
+                                {/* 1. Developed with YouTube Badge - CLICKABLE & BIG */}
+                                <a
+                                    href="https://youtube.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block p-4 hover:brightness-110 transition-all opacity-90 hover:opacity-100"
+                                    aria-label="Developed with YouTube"
+                                >
                                     <img
                                         src="/developed-with-youtube-sentence-case-light.png"
                                         alt="Developed with YouTube"
-                                        className="h-12 object-contain"
+                                        className="h-14 lg:h-16 object-contain"
                                     />
-                                </div>
+                                </a>
 
-                                {/* Copyright & Links - Clean Single Line */}
-                                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-[#71717A] font-medium tracking-wide">
-                                    <span>© 2026 Reply</span>
-                                    <div className="flex items-center gap-4">
-                                        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
-                                        <span className="w-0.5 h-0.5 bg-[#71717A] rounded-full" />
-                                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
+                                <div className="space-y-4">
+                                    {/* 2. Copyright Line */}
+                                    <p className="text-xs text-[#71717A] tracking-wide">
+                                        © 2026 Reply. All rights reserved.
+                                    </p>
+
+                                    {/* 3. Legal Links & Support */}
+                                    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-[#A1A1AA] font-medium">
+                                        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline-offset-4 hover:underline">YouTube ToS</a>
+                                        <span className="w-0.5 h-0.5 bg-[#52525B] rounded-full" />
+                                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline-offset-4 hover:underline">Google Privacy Policy</a>
+                                        <span className="w-0.5 h-0.5 bg-[#52525B] rounded-full" />
+                                        <a href="mailto:support@reply.com" className="hover:text-white transition-colors underline-offset-4 hover:underline">Support</a>
                                     </div>
+
+                                    {/* 4. Mandatory Trademark Disclaimer */}
+                                    <p className="text-[10px] text-[#52525B]">
+                                        YouTube is a trademark of Google LLC.
+                                    </p>
                                 </div>
                             </div>
                         </footer>
