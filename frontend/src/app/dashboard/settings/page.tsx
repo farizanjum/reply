@@ -17,7 +17,7 @@ export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('profile');
 
     // Multi-tab sync for YouTube state
-    const { broadcast, syncState } = useYouTubeSync();
+    const { broadcast } = useYouTubeSync();
 
     // Check if user is accessing via delegation (restricted access)
     const [isDelegation, setIsDelegation] = useState(false);
@@ -63,17 +63,12 @@ export default function SettingsPage() {
         checkPasswordStatus();
     }, []);
 
-    // Update YouTube connection status when user or syncState changes
-    // PRIORITY: syncState (from broadcast) > user session (cached cookie)
+    // Update YouTube connection status when user changes
     useEffect(() => {
-        if (syncState !== null) {
-            // Use fresh state from broadcast
-            setYoutubeConnected(syncState.connected);
-        } else if (user) {
-            // Fall back to session value
+        if (user) {
             setYoutubeConnected(user.youtubeConnected ?? false);
         }
-    }, [user, syncState]);
+    }, [user]);
 
     // YouTube disconnect handler
     const handleDisconnectYouTube = async () => {
