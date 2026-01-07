@@ -99,10 +99,13 @@ export default function SettingsPage() {
                     description: data.message || 'You can reconnect anytime.',
                 });
 
+                // Force Next.js to refetch all server data
+                router.refresh();
+
                 // Navigate to dashboard after short delay
                 setTimeout(() => {
                     router.push('/dashboard');
-                }, 1000);
+                }, 500);
             } else {
                 toast.error('Disconnect Failed', {
                     description: data.error || 'Failed to disconnect YouTube',

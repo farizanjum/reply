@@ -133,17 +133,13 @@ export default function ConnectYouTubePage() {
                     </div>
 
                     {/* Legal Links Footer */}
-                    <div className="mt-8 pt-8 border-t border-white/5 flex flex-col items-center gap-4">
-                        <img
-                            src="/developed-with-youtube-sentence-case-light.png"
-                            alt="Developed with YouTube"
-                            className="h-6 opacity-60 object-contain"
-                        />
+                    <div className="mt-8 pt-6 border-t border-white/5 flex flex-col items-center gap-3">
                         <div className="flex items-center justify-center gap-4 text-[10px] text-neutral-500 font-medium">
                             <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube Terms of Service</a>
                             <span className="w-1 h-1 bg-neutral-800 rounded-full" />
                             <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
                         </div>
+                        <p className="text-[9px] text-neutral-600">YouTube is a trademark of Google LLC.</p>
                     </div>
                 </CardSpotlight>
             </div>

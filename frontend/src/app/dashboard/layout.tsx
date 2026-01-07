@@ -51,7 +51,7 @@ function DashboardLayoutInner({
                 credentials: 'include'
             })
                 .then(res => res.json())
-                .then((data) => {
+                .then(async (data) => {
                     if (data.success) {
                         console.log('[Dashboard] Reconnection successful:', data);
                         // Show success toast
@@ -65,6 +65,16 @@ function DashboardLayoutInner({
                             connected: true,
                             channelName: data.channelName || null
                         });
+
+                        // CRITICAL: Force refresh the auth session for THIS tab
+                        // This ensures the dashboard page reads the updated youtubeConnected flag
+                        try {
+                            const { authClient } = await import('@/lib/auth-client');
+                            await authClient.getSession();
+                            console.log('[Dashboard] Session refreshed after reconnection');
+                        } catch (e) {
+                            console.warn('[Dashboard] Session refresh failed:', e);
+                        }
                     } else {
                         console.error('[Dashboard] Reconnection failed:', data.error);
                         import('sonner').then(({ toast }) => {
@@ -74,10 +84,12 @@ function DashboardLayoutInner({
                         });
                     }
 
-                    // Clean up URL param
+                    // Clean up URL param and force a full page refresh
                     const url = new URL(window.location.href);
                     url.searchParams.delete('youtube_reconnect');
                     router.replace(url.pathname + url.search);
+                    // Force Next.js to refetch all data
+                    router.refresh();
                 })
                 .catch((error) => {
                     console.error('[Dashboard] Reconnection error:', error);
