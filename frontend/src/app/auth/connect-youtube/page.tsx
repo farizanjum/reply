@@ -67,8 +67,8 @@ export default function ConnectYouTubePage() {
                     {/* Info Box */}
                     <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
                         <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-[#FF0000] flex items-center justify-center shadow-lg shadow-red-500/20">
-                                <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-8 h-8 object-contain" />
+                            <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-[#FF0000] flex items-center justify-center shadow-lg shadow-red-500/20">
+                                <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-10 h-10 object-contain" />
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-white mb-1">Why connect YouTube?</p>
@@ -133,10 +133,15 @@ export default function ConnectYouTubePage() {
                     </div>
 
                     {/* Legal Links Footer */}
-                    <div className="mt-8 pt-4 border-t border-white/5 text-center opacity-30 hover:opacity-100 transition-opacity">
-                        <div className="flex items-center justify-center gap-3 text-[9px] text-neutral-500 font-medium">
-                            <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
-                            <span className="w-0.5 h-0.5 bg-neutral-700 rounded-full" />
+                    <div className="mt-8 pt-8 border-t border-white/5 flex flex-col items-center gap-4">
+                        <img
+                            src="/developed-with-youtube-sentence-case-light.png"
+                            alt="Developed with YouTube"
+                            className="h-6 opacity-60 object-contain"
+                        />
+                        <div className="flex items-center justify-center gap-4 text-[10px] text-neutral-500 font-medium">
+                            <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube Terms of Service</a>
+                            <span className="w-1 h-1 bg-neutral-800 rounded-full" />
                             <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
                         </div>
                     </div>

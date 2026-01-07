@@ -166,24 +166,37 @@ function DashboardLayoutInner({
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
+                <main className="flex-1 p-4 md:p-8 overflow-x-hidden flex flex-col">
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="max-w-7xl mx-auto"
+                        className="max-w-7xl mx-auto w-full flex-1 flex flex-col"
                     >
-                        {children}
+                        <div className="flex-1">
+                            {children}
+                        </div>
 
-                        <footer className="mt-16 py-6 border-t border-white/5 text-center px-4">
-                            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-[#3F3F46] font-medium tracking-wide transition-opacity opacity-40 hover:opacity-100">
-                                <span>© {new Date().getFullYear()} Reply</span>
-                                <span className="w-1 h-1 bg-white/10 rounded-full hidden sm:block" />
-                                <span>Metrics by <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube</a></span>
-                                <span className="w-1 h-1 bg-white/10 rounded-full hidden sm:block" />
-                                <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
-                                <span className="w-1 h-1 bg-white/10 rounded-full hidden sm:block" />
-                                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Google Privacy Policy</a>
+                        <footer className="mt-12 pt-8 pb-4 border-t border-white/5 w-full">
+                            <div className="flex flex-col items-center gap-6">
+                                {/* Developed with YouTube Badge */}
+                                <div className="opacity-80 transition-opacity hover:opacity-100">
+                                    <img
+                                        src="/developed-with-youtube-sentence-case-light.png"
+                                        alt="Developed with YouTube"
+                                        className="h-8 object-contain"
+                                    />
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] text-[#52525B] font-medium tracking-wide">
+                                    <span>© {new Date().getFullYear()} Reply</span>
+                                    <div className="flex items-center gap-4">
+                                        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube Terms of Service</a>
+                                        <span className="w-1 h-1 bg-white/10 rounded-full" />
+                                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Google Privacy Policy</a>
+                                    </div>
+                                    <span className="text-[#3f3f46]">Metrics provided by YouTube</span>
+                                </div>
                             </div>
                         </footer>
                     </motion.div>
