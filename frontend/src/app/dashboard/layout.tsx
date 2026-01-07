@@ -3,14 +3,15 @@
 import { useSession } from '@/lib/auth-client';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Sidebar, MobileSidebar } from '@/components/layout/Sidebar';
 import { cn } from '@/lib/utils';
 import { useYouTubeSync } from '@/lib/useYouTubeSync';
 
-export default function DashboardLayout({
+// Inner component that uses useSearchParams
+function DashboardLayoutInner({
     children,
 }: {
     children: React.ReactNode;
@@ -161,6 +162,28 @@ export default function DashboardLayout({
                 </main>
             </div>
         </div>
+    );
+}
+
+// Wrapper component with Suspense boundary for useSearchParams
+export default function DashboardLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[#050505]">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                        <div className="w-12 h-12 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
+                    </div>
+                    <p className="text-[#A1A1AA] text-sm">Loading dashboard...</p>
+                </div>
+            </div>
+        }>
+            <DashboardLayoutInner>{children}</DashboardLayoutInner>
+        </Suspense>
     );
 }
 
