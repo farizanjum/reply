@@ -109,8 +109,8 @@ export default function DashboardPage() {
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(249,115,22,0.1),transparent_50%)]" />
                     <div className="relative flex items-start justify-between gap-4">
                         <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-500/20">
-                                <Youtube className="w-6 h-6 text-white" />
+                            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#FF0132] flex items-center justify-center shadow-lg shadow-red-500/20">
+                                <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-6 h-6 object-contain" />
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-white mb-1">Connect Your YouTube Channel</h3>
@@ -119,9 +119,9 @@ export default function DashboardPage() {
                                 </p>
                                 <button
                                     onClick={() => connectYouTube('/dashboard')}
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40"
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FF0132] hover:bg-[#D90028] text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-red-500/25 hover:shadow-red-500/40"
                                 >
-                                    <Youtube className="w-4 h-4" />
+                                    <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-4 h-4 object-contain" />
                                     Connect YouTube Now
                                 </button>
                             </div>

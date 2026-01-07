@@ -357,16 +357,20 @@ export default function SettingsPage() {
                                 />
                             </div>
                             {youtubeConnected ? (
-                                <div className="flex items-center gap-2 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                                    <Youtube className="w-5 h-5 text-green-500" />
+                                <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#FF0132] flex items-center justify-center">
+                                        <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-5 h-5 object-contain" />
+                                    </div>
                                     <div className="flex-1">
                                         <p className="text-sm font-medium text-white">YouTube Connected</p>
                                         <p className="text-xs text-[#A1A1AA]">{user?.channelName || 'Your YouTube account is linked'}</p>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
-                                    <Youtube className="w-5 h-5 text-orange-500" />
+                                <div className="flex items-center gap-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+                                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#FF0132] flex items-center justify-center">
+                                        <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-5 h-5 object-contain" />
+                                    </div>
                                     <div className="flex-1">
                                         <p className="text-sm font-medium text-white">YouTube Not Connected</p>
                                         <p className="text-xs text-[#A1A1AA]">Connect to manage your videos and auto-replies</p>
@@ -392,8 +396,8 @@ export default function SettingsPage() {
                             <div className="p-4 bg-[#0A0A0A] rounded-xl border border-white/5">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center">
-                                            <Youtube className="w-5 h-5 text-red-500" />
+                                        <div className="w-10 h-10 bg-[#FF0132] rounded-lg flex items-center justify-center">
+                                            <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-5 h-5 object-contain" />
                                         </div>
                                         <div>
                                             <p className="text-sm font-medium text-white">Google / YouTube</p>

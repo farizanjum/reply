@@ -67,8 +67,8 @@ export default function ConnectYouTubePage() {
                     {/* Info Box */}
                     <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
                         <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center">
-                                <Youtube className="w-5 h-5 text-white" />
+                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#FF0132] flex items-center justify-center">
+                                <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-5 h-5 object-contain" />
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-white mb-1">Why connect YouTube?</p>
@@ -96,7 +96,7 @@ export default function ConnectYouTubePage() {
                     {/* Connect Button */}
                     <ShimmerButton
                         className="w-full shadow-lg h-14 text-base font-semibold"
-                        background="rgba(220, 38, 38, 0.8)"
+                        background="#FF0132"
                         shimmerColor="rgba(255, 255, 255, 0.3)"
                         shimmerDuration="2.5s"
                         onClick={handleConnectYouTube}
@@ -106,7 +106,7 @@ export default function ConnectYouTubePage() {
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
-                                <Youtube className="w-5 h-5" />
+                                <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-5 h-5 object-contain" />
                             )}
                             Connect YouTube Channel
                         </div>
