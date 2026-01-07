@@ -67,8 +67,8 @@ export default function ConnectYouTubePage() {
                     {/* Info Box */}
                     <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
                         <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#FF0132] flex items-center justify-center">
-                                <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-5 h-5 object-contain" />
+                            <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#FF0132] flex items-center justify-center">
+                                <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-7 h-7 object-contain" />
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-white mb-1">Why connect YouTube?</p>
@@ -106,7 +106,7 @@ export default function ConnectYouTubePage() {
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
-                                <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-5 h-5 object-contain" />
+                                <img src="/yt_icon_white_digital.png" alt="YouTube" className="w-6 h-6 object-contain" />
                             )}
                             Connect YouTube Channel
                         </div>
