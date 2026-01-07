@@ -166,7 +166,7 @@ function DashboardLayoutInner({
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 p-4 md:p-8 overflow-x-hidden flex flex-col">
+                <main className="flex-1 p-4 md:p-8 overflow-x-hidden flex flex-col min-h-[calc(100vh-64px)] lg:min-h-screen">
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -177,29 +177,25 @@ function DashboardLayoutInner({
                             {children}
                         </div>
 
-                        <footer className="mt-12 pt-8 pb-8 border-t border-white/5 w-full">
-                            <div className="flex flex-col items-center gap-6">
-                                {/* Developed with YouTube Badge */}
-                                <div className="opacity-60 transition-opacity hover:opacity-100 cursor-pointer" title="Developed with YouTube">
+                        <footer className="mt-auto pt-12 pb-6 w-full">
+                            <div className="flex flex-col items-center gap-4">
+                                {/* Developed with YouTube Badge - Larger & Visible */}
+                                <div className="hover:opacity-100 transition-opacity cursor-pointer">
                                     <img
                                         src="/developed-with-youtube-sentence-case-light.png"
                                         alt="Developed with YouTube"
-                                        className="h-6 object-contain"
+                                        className="h-12 object-contain"
                                     />
                                 </div>
 
-                                {/* Copyright & Links */}
-                                <div className="flex items-center justify-center gap-4 text-[11px] text-[#52525B] font-medium tracking-wide">
-                                    <span>© Reply. All rights reserved.</span>
-                                    <span className="w-0.5 h-3 bg-white/10" />
-                                    <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
-                                    <span className="w-0.5 h-3 bg-white/10" />
-                                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Google Privacy Policy</a>
-                                </div>
-
-                                {/* Metrics Attribution */}
-                                <div className="text-[10px] text-[#3f3f46] font-medium tracking-wider uppercase opacity-50">
-                                    Metrics provided by YouTube
+                                {/* Copyright & Links - Clean Single Line */}
+                                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-[#71717A] font-medium tracking-wide">
+                                    <span>© 2026 Reply</span>
+                                    <div className="flex items-center gap-4">
+                                        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
+                                        <span className="w-0.5 h-0.5 bg-[#71717A] rounded-full" />
+                                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
+                                    </div>
                                 </div>
                             </div>
                         </footer>
