@@ -1,36 +1,29 @@
 import { PrismaClient } from '@prisma/client';
+import { withAccelerate } from '@prisma/extension-accelerate';
 
 /**
- * Shared Prisma Client Singleton
+ * Shared Prisma Client Singleton with Prisma Accelerate
  * 
- * Uses connection limit to prevent "too many connections" errors
+ * Prisma Accelerate provides:
+ * 1. Connection pooling for serverless environments (Vercel)
+ * 2. Global edge caching
+ * 3. Prevents "too many connections" errors
  * 
- * To use Prisma Accelerate:
- * 1. Go to console.prisma.io
- * 2. Configure your project to use your Heroku Postgres URL as the "Direct URL"
- * 3. Get the Accelerate connection string  
- * 4. Set it as DATABASE_URL in Vercel
- * 5. Uncomment the withAccelerate() extension below
+ * Set DATABASE_URL to your Prisma Accelerate URL in Vercel:
+ * prisma+postgres://accelerate.prisma-data.net/?api_key=YOUR_KEY
  */
 
 const globalForPrisma = globalThis as unknown as {
-    prisma: PrismaClient | undefined
+    prisma: ReturnType<typeof createPrismaClient> | undefined
 };
 
-// Add connection limit to prevent pool exhaustion in serverless
-const databaseUrl = process.env.DATABASE_URL;
-const connectionUrl = databaseUrl?.includes('?')
-    ? `${databaseUrl}&connection_limit=5`
-    : `${databaseUrl}?connection_limit=5`;
+function createPrismaClient() {
+    return new PrismaClient({
+        log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    }).$extends(withAccelerate());
+}
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    datasources: {
-        db: {
-            url: connectionUrl
-        }
-    }
-});
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 // CRITICAL: Always set global to ensure reuse across serverless invocations
 if (!globalForPrisma.prisma) {
@@ -38,6 +31,5 @@ if (!globalForPrisma.prisma) {
 }
 
 export default prisma;
-
 
 
