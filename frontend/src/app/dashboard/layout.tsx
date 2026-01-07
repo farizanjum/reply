@@ -177,23 +177,8 @@ function DashboardLayoutInner({
                             {children}
                         </div>
 
-                        <footer className="mt-auto pt-8 pb-6 w-full border-t border-white/5">
-                            <div className="flex flex-col items-center justify-center text-center gap-4">
-                                {/* Developed with YouTube Badge - Visible & Clickable */}
-                                <a
-                                    href="https://youtube.com"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="hover:brightness-110 transition-all"
-                                    aria-label="Developed with YouTube"
-                                >
-                                    <img
-                                        src="/developed-with-youtube-sentence-case-light.png"
-                                        alt="Developed with YouTube"
-                                        className="h-10 object-contain"
-                                    />
-                                </a>
-
+                        <footer className="mt-auto pt-6 pb-4 w-full border-t border-white/5">
+                            <div className="flex flex-col items-center justify-center text-center gap-3">
                                 {/* Links Row */}
                                 <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[11px] text-[#A1A1AA]">
                                     <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
