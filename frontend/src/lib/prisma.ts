@@ -1,20 +1,29 @@
 import { PrismaClient } from '@prisma/client';
+import { withAccelerate } from '@prisma/extension-accelerate';
 
 /**
- * Shared Prisma Client Singleton
+ * Shared Prisma Client Singleton with Prisma Accelerate
  * 
- * CRITICAL: Prevents connection pool exhaustion in serverless (Vercel)
- * by ensuring only ONE PrismaClient instance is created and reused
- * across all API routes and functions.
+ * Prisma Accelerate provides:
+ * 1. Connection pooling for serverless environments (Vercel)
+ * 2. Global edge caching
+ * 3. Prevents "too many connections" errors
+ * 
+ * Set DATABASE_URL to your Prisma Accelerate URL in Vercel:
+ * prisma+postgres://accelerate.prisma-data.net/?api_key=YOUR_KEY
  */
 
 const globalForPrisma = globalThis as unknown as {
-    prisma: PrismaClient | undefined
+    prisma: ReturnType<typeof createPrismaClient> | undefined
 };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-});
+function createPrismaClient() {
+    return new PrismaClient({
+        log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    }).$extends(withAccelerate());
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 // CRITICAL: Always set global to ensure reuse across serverless invocations
 if (!globalForPrisma.prisma) {
@@ -22,4 +31,5 @@ if (!globalForPrisma.prisma) {
 }
 
 export default prisma;
+
 
