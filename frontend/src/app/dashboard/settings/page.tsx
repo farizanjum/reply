@@ -346,13 +346,23 @@ export default function SettingsPage() {
                                     className="w-full px-4 py-2 bg-[#0A0A0A] border border-white/10 rounded-xl text-sm text-white disabled:opacity-50"
                                 />
                             </div>
-                            <div className="flex items-center gap-2 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
-                                <Youtube className="w-5 h-5 text-orange-500" />
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-white">YouTube Connected</p>
-                                    <p className="text-xs text-[#A1A1AA]">Your YouTube account is linked</p>
+                            {youtubeConnected ? (
+                                <div className="flex items-center gap-2 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                                    <Youtube className="w-5 h-5 text-green-500" />
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-white">YouTube Connected</p>
+                                        <p className="text-xs text-[#A1A1AA]">{user?.channelName || 'Your YouTube account is linked'}</p>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="flex items-center gap-2 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+                                    <Youtube className="w-5 h-5 text-orange-500" />
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-white">YouTube Not Connected</p>
+                                        <p className="text-xs text-[#A1A1AA]">Connect to manage your videos and auto-replies</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </Card>
                 </div>

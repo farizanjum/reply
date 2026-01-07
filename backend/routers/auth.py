@@ -1,157 +1,17 @@
 from fastapi import APIRouter, HTTPException, Request, Header
 from fastapi.responses import RedirectResponse
-from google_auth_oauthlib.flow import Flow
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
 import requests
 from datetime import datetime, timedelta
 import jwt
 from config import settings
-from db import create_or_update_user, get_user_by_id
+from db import get_user_by_id
 
 router = APIRouter()
 
-# OAuth configuration
-CLIENT_CONFIG = {
-    "web": {
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "client_secret": settings.GOOGLE_CLIENT_SECRET,
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "redirect_uris": [settings.REDIRECT_URI]
-    }
-}
+# NOTE: OAuth flow is now handled by Better Auth on the frontend.
+# The frontend syncs tokens to this backend via /sync-tokens endpoint.
+# Old /google and /callback routes have been removed to avoid confusion.
 
-SCOPES = [
-    "https://www.googleapis.com/auth/youtube.force-ssl",
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile"
-]
-
-@router.get("/google")
-async def google_auth(request: Request):
-    """Initiate OAuth flow"""
-    flow = Flow.from_client_config(
-        CLIENT_CONFIG,
-        scopes=SCOPES,
-        redirect_uri=settings.REDIRECT_URI
-    )
-    
-    authorization_url, state = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true',
-        prompt='consent'  # Force to get refresh token
-    )
-    
-    # Store state in session for CSRF protection
-    # In production, use encrypted session
-    
-    return {"auth_url": authorization_url}
-
-@router.get("/callback")
-async def google_callback(code: str, state: str = None):
-    """Handle OAuth callback"""
-    
-    try:
-        # Exchange code for tokens using direct API call to avoid scope validation
-        token_response = requests.post(
-            'https://oauth2.googleapis.com/token',
-            data={
-                'code': code,
-                'client_id': settings.GOOGLE_CLIENT_ID,
-                'client_secret': settings.GOOGLE_CLIENT_SECRET,
-                'redirect_uri': settings.REDIRECT_URI,
-                'grant_type': 'authorization_code',
-            }
-        )
-        
-        if token_response.status_code != 200:
-            raise HTTPException(400, f"Token exchange failed: {token_response.text}")
-        
-        token_data = token_response.json()
-        access_token = token_data['access_token']
-        refresh_token = token_data.get('refresh_token')
-        expires_in = token_data.get('expires_in', 3600)
-        
-        # Calculate token expiry
-        token_expiry = datetime.utcnow() + timedelta(seconds=expires_in)
-        
-        # Create credentials object
-        credentials = Credentials(
-            token=access_token,
-            refresh_token=refresh_token,
-            token_uri='https://oauth2.googleapis.com/token',
-            client_id=settings.GOOGLE_CLIENT_ID,
-            client_secret=settings.GOOGLE_CLIENT_SECRET,
-            scopes=SCOPES
-        )
-        
-        # Get user info
-        user_info = get_user_info(credentials)
-        
-        # Get YouTube channel info
-        channel_info = get_channel_info(credentials)
-        
-        # Save or update user in database
-        user = await create_or_update_user(
-            email=user_info['email'],
-            google_id=user_info['id'],
-            channel_id=channel_info['id'],
-            channel_name=channel_info['snippet']['title'],
-            channel_thumbnail=channel_info['snippet']['thumbnails']['default']['url'],
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_expiry=token_expiry
-        )
-        
-        # Create JWT token for frontend
-        token = jwt.encode(
-            {
-                "user_id": user['id'],
-                "email": user['email'],
-                "exp": datetime.utcnow() + timedelta(days=30)
-            },
-            settings.SECRET_KEY,
-            algorithm="HS256"
-        )
-        
-        # Redirect to frontend with token
-        frontend_url = settings.FRONTEND_URL
-        return RedirectResponse(
-            url=f"{frontend_url}/auth/callback?token={token}"
-        )
-        
-    except Exception as e:
-        print(f"Auth error: {e}")
-        import traceback
-        traceback.print_exc()
-        # Redirect to frontend with error
-        return RedirectResponse(
-            url=f"{settings.FRONTEND_URL}/auth/callback?error={str(e)}"
-        )
-
-def get_user_info(credentials: Credentials) -> dict:
-    """Get user profile info from Google"""
-    response = requests.get(
-        "https://www.googleapis.com/oauth2/v2/userinfo",
-        headers={"Authorization": f"Bearer {credentials.token}"}
-    )
-    return response.json()
-
-def get_channel_info(credentials: Credentials) -> dict:
-    """Get YouTube channel info"""
-    youtube = build('youtube', 'v3', credentials=credentials)
-    
-    request = youtube.channels().list(
-        part="snippet,contentDetails,statistics",
-        mine=True
-    )
-    response = request.execute()
-    
-    if not response.get('items'):
-        raise HTTPException(400, "No YouTube channel found")
-    
-    return response['items'][0]
 
 @router.get("/me")
 async def get_me(authorization: str = Header(None)):

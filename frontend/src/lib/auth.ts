@@ -19,7 +19,7 @@ export const auth = betterAuth({
         provider: "postgresql",
     }) : undefined as any, // Fallback for build time
 
-    // Database hooks - send welcome email when a new user is created
+    // Database hooks - handle user/account creation events
     databaseHooks: {
         user: {
             create: {
@@ -30,6 +30,26 @@ export const auth = betterAuth({
                         // OAuth users have youtubeConnected=true, email/password users have it as false
                         const isYouTubeConnected = (user as any).youtubeConnected || false;
                         await sendWelcomeEmail(user.email, user.name || undefined, isYouTubeConnected);
+                    }
+                },
+            },
+        },
+        // CRITICAL: Auto-set youtubeConnected=true when Google OAuth account is linked
+        account: {
+            create: {
+                after: async (account) => {
+                    // When a Google account is created (OAuth login), mark user as YouTube connected
+                    if (account.providerId === 'google' && prisma) {
+                        console.log(`[Auth] Google account linked for user ${account.userId}, setting youtubeConnected=true`);
+                        try {
+                            await prisma.user.update({
+                                where: { id: account.userId },
+                                data: { youtubeConnected: true }
+                            });
+                            console.log(`[Auth] Successfully set youtubeConnected=true for user ${account.userId}`);
+                        } catch (error) {
+                            console.error(`[Auth] Failed to update youtubeConnected:`, error);
+                        }
                     }
                 },
             },

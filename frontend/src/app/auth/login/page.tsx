@@ -62,13 +62,9 @@ export default function LoginPage() {
                     return;
                 }
 
-                // Check if YouTube is connected
-                const user = result.data?.user as any;
-                if (user && !user.youtubeConnected) {
-                    router.push('/auth/connect-youtube');
-                } else {
-                    router.push('/dashboard');
-                }
+                // Email login successful - go to dashboard
+                // The dashboard will show a banner if YouTube isn't connected
+                router.push('/dashboard');
                 return;
             }
 
