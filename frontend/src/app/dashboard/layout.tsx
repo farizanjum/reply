@@ -174,6 +174,18 @@ function DashboardLayoutInner({
                         className="max-w-7xl mx-auto"
                     >
                         {children}
+
+                        <footer className="mt-12 py-8 border-t border-white/5 text-center text-[#52525B] text-xs space-y-2">
+                            <p>© {new Date().getFullYear()} Reply. All rights reserved.</p>
+                            <p className="flex items-center justify-center gap-1">
+                                Metrics and statistics provided by <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-[#A1A1AA] hover:text-white underline underline-offset-4 transition-colors">YouTube</a>.
+                            </p>
+                            <div className="flex items-center justify-center gap-4 pt-2">
+                                <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
+                                <span className="w-1 h-1 bg-white/10 rounded-full" />
+                                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Google Privacy Policy</a>
+                            </div>
+                        </footer>
                     </motion.div>
                 </main>
             </div>

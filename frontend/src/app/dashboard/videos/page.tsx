@@ -552,6 +552,7 @@ export default function VideosPage() {
                                             <MessageSquare className="w-3 h-3" />
                                             {video.comment_count?.toLocaleString() || 0}
                                         </span>
+                                        <span className="ml-auto opacity-50 text-[10px]">Data from YouTube</span>
                                     </div>
                                     {video.keywords && video.keywords.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mt-3">
