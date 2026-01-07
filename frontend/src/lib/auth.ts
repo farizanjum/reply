@@ -105,9 +105,10 @@ export const auth = betterAuth({
     session: {
         expiresIn: 60 * 60 * 24 * 7, // 7 days
         updateAge: 60 * 60 * 24, // Update session every 24 hours
+        // DISABLED cookie cache - was causing stale youtubeConnected state on page refresh
+        // The 5-minute cache meant database updates weren't reflected until cache expired
         cookieCache: {
-            enabled: true,
-            maxAge: 60 * 5, // 5 minutes cache
+            enabled: false,
         },
     },
 
