@@ -140,14 +140,36 @@ export default function VideosPage() {
         }
     }, [videosData?.videos]);
 
+    // Helper function to refetch settings for all videos
+    const refetchAllVideoSettings = async (videos: any[]) => {
+        const newSettingsMap = new Map<string, VideoSettings>();
+
+        await Promise.all(videos.map(async (v: any) => {
+            try {
+                const response = await fetch(`/api/youtube/settings/${v.id}`);
+                if (response.ok) {
+                    const settings = await response.json();
+                    newSettingsMap.set(v.id, settings);
+                }
+            } catch (e) {
+                // Ignore errors for individual videos
+            }
+        }));
+
+        setVideoSettingsMap(newSettingsMap);
+    };
+
     const syncMutation = useMutation({
         mutationFn: () => videosApi.syncVideos(),
-        onSuccess: () => {
-            // Invalidate the correct query key to refresh video list
-            queryClient.invalidateQueries({ queryKey: ['youtube-videos'] });
+        onSuccess: async () => {
+            // Invalidate and refetch the videos query
+            await queryClient.invalidateQueries({ queryKey: ['youtube-videos'] });
 
-            // Also clear video settings cache to get fresh data
-            setVideoSettingsMap(new Map());
+            // Get the fresh videos data and refetch all settings
+            const freshVideosData = queryClient.getQueryData(['youtube-videos']) as any;
+            if (freshVideosData?.videos) {
+                await refetchAllVideoSettings(freshVideosData.videos);
+            }
 
             // Show success toast
             setSuccessMessage('Videos synced from YouTube!');
