@@ -131,6 +131,14 @@ export default function ConnectYouTubePage() {
                             <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 opacity-50 group-hover:opacity-100" />
                         </button>
                     </div>
+
+                    {/* Legal Links Footer */}
+                    <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                        <div className="flex items-center justify-center gap-4 text-[10px] text-neutral-500">
+                            <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube Terms of Service</a>
+                            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Google Privacy Policy</a>
+                        </div>
+                    </div>
                 </CardSpotlight>
             </div>
         </div>
