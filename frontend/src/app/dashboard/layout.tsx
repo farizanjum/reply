@@ -175,14 +175,14 @@ function DashboardLayoutInner({
                     >
                         {children}
 
-                        <footer className="mt-12 py-8 border-t border-white/5 text-center text-[#52525B] text-xs space-y-2">
-                            <p>© {new Date().getFullYear()} Reply. All rights reserved.</p>
-                            <p className="flex items-center justify-center gap-1">
-                                Metrics and statistics provided by <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-[#A1A1AA] hover:text-white underline underline-offset-4 transition-colors">YouTube</a>.
-                            </p>
-                            <div className="flex items-center justify-center gap-4 pt-2">
+                        <footer className="mt-16 py-6 border-t border-white/5 text-center px-4">
+                            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-[#3F3F46] font-medium tracking-wide transition-opacity opacity-40 hover:opacity-100">
+                                <span>© {new Date().getFullYear()} Reply</span>
+                                <span className="w-1 h-1 bg-white/10 rounded-full hidden sm:block" />
+                                <span>Metrics by <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube</a></span>
+                                <span className="w-1 h-1 bg-white/10 rounded-full hidden sm:block" />
                                 <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
-                                <span className="w-1 h-1 bg-white/10 rounded-full" />
+                                <span className="w-1 h-1 bg-white/10 rounded-full hidden sm:block" />
                                 <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Google Privacy Policy</a>
                             </div>
                         </footer>

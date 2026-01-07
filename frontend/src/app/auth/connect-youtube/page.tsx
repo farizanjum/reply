@@ -133,10 +133,11 @@ export default function ConnectYouTubePage() {
                     </div>
 
                     {/* Legal Links Footer */}
-                    <div className="mt-8 pt-6 border-t border-white/5 text-center">
-                        <div className="flex items-center justify-center gap-4 text-[10px] text-neutral-500">
-                            <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube Terms of Service</a>
-                            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Google Privacy Policy</a>
+                    <div className="mt-8 pt-4 border-t border-white/5 text-center opacity-30 hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-center gap-3 text-[9px] text-neutral-500 font-medium">
+                            <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">YouTube ToS</a>
+                            <span className="w-0.5 h-0.5 bg-neutral-700 rounded-full" />
+                            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
                         </div>
                     </div>
                 </CardSpotlight>
