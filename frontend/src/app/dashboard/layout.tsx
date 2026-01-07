@@ -2,7 +2,7 @@
 
 import { useSession } from '@/lib/auth-client';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -16,6 +16,7 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { data: session, isPending } = useSession();
 
     const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile drawer
@@ -35,6 +36,42 @@ export default function DashboardLayout({
             router.push('/auth/login');
         }
     }, [mounted, isPending, session, router]);
+
+    // Handle YouTube reconnection after OAuth callback
+    // When URL has ?youtube_reconnect=1, call the reconnect endpoint
+    useEffect(() => {
+        const isReconnect = searchParams.get('youtube_reconnect') === '1';
+
+        if (isReconnect && session?.user?.id) {
+            console.log('[Dashboard] Detected youtube_reconnect param, calling reconnect endpoint');
+
+            fetch('/api/youtube/reconnect', {
+                method: 'POST',
+                credentials: 'include'
+            })
+                .then(res => res.json())
+                .then((data) => {
+                    if (data.success) {
+                        console.log('[Dashboard] Reconnection successful:', data);
+                        // Broadcast to other tabs
+                        broadcast({
+                            connected: true,
+                            channelName: data.channelName || null
+                        });
+                    } else {
+                        console.error('[Dashboard] Reconnection failed:', data.error);
+                    }
+
+                    // Clean up URL param
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('youtube_reconnect');
+                    router.replace(url.pathname + url.search);
+                })
+                .catch((error) => {
+                    console.error('[Dashboard] Reconnection error:', error);
+                });
+        }
+    }, [searchParams, session?.user?.id, router, broadcast]);
 
     // Sync YouTube tokens to backend on every dashboard visit
     // Uses OPTIMISTIC UI from API response + broadcasts to other tabs

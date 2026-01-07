@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { useSession } from '@/lib/auth-client';
 import { useState } from 'react';
 import { DashboardSkeleton } from '@/components/ui/LoadingSkeletons';
+import { connectYouTube } from '@/lib/youtube-connect';
 
 export default function DashboardPage() {
     const { data: session } = useSession();
@@ -116,13 +117,13 @@ export default function DashboardPage() {
                                 <p className="text-sm text-neutral-300 mb-4 max-w-2xl">
                                     You need to connect your YouTube channel to access your videos, manage auto-replies, and view analytics. This takes just a few seconds!
                                 </p>
-                                <Link
-                                    href="/auth/connect-youtube"
+                                <button
+                                    onClick={() => connectYouTube('/dashboard')}
                                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40"
                                 >
                                     <Youtube className="w-4 h-4" />
                                     Connect YouTube Now
-                                </Link>
+                                </button>
                             </div>
                         </div>
                         <button

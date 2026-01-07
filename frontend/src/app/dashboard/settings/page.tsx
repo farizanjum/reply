@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ReAuthModal } from '@/components/ui/ReAuthModal';
 import { useYouTubeSync } from '@/lib/useYouTubeSync';
+import { connectYouTube } from '@/lib/youtube-connect';
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -413,7 +414,7 @@ export default function SettingsPage() {
                                         <Button
                                             size="sm"
                                             variant="primary"
-                                            onClick={() => router.push('/auth/connect-youtube')}
+                                            onClick={() => connectYouTube('/dashboard/settings')}
                                         >
                                             Connect
                                         </Button>

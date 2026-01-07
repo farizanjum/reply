@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Youtube, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { signIn, useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/auth-client';
+import { connectYouTube } from '@/lib/youtube-connect';
 import { CardSpotlight, ShimmerButton, GlassButton, Tiles } from '@/components/auth/AuthComponents';
 import '@/components/auth/auth.css';
 
@@ -14,16 +15,14 @@ export default function ConnectYouTubePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Handle Google/YouTube connection
+    // Handle Google/YouTube connection using unified helper
     const handleConnectYouTube = async () => {
         setIsLoading(true);
         setError(null);
 
         try {
-            await signIn.social({
-                provider: 'google',
-                callbackURL: '/dashboard',
-            });
+            // Use unified connect helper - includes reconnect param
+            await connectYouTube('/dashboard');
         } catch (err: any) {
             setError(err.message || 'Failed to connect YouTube. Please try again.');
             setIsLoading(false);
