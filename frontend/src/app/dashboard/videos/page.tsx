@@ -546,11 +546,11 @@ export default function VideosPage() {
                                     <div className="flex items-center gap-4 text-xs text-gray-400">
                                         <span className="flex items-center gap-1">
                                             <Eye className="w-3 h-3" />
-                                            {video.view_count?.toLocaleString() || 0}
+                                            {video.view_count?.toLocaleString() || 0} views
                                         </span>
                                         <span className="flex items-center gap-1">
                                             <MessageSquare className="w-3 h-3" />
-                                            {video.comment_count?.toLocaleString() || 0}
+                                            {video.comment_count?.toLocaleString() || 0} comments
                                         </span>
                                         <span className="ml-auto opacity-50 text-[10px]">Data from YouTube</span>
                                     </div>
