@@ -748,6 +748,8 @@ async def mark_comments_replied_batch(replies: List[Dict]) -> int:
 
 async def get_reply_stats(user_id: int, days: int = 7) -> Dict:
     """Get reply statistics"""
+    # Ensure user_id is int for asyncpg
+    user_id = int(user_id) if isinstance(user_id, str) else user_id
     async with pool.acquire() as conn:
         row = await conn.fetchrow(f"""
             SELECT 
@@ -764,6 +766,8 @@ async def get_reply_stats(user_id: int, days: int = 7) -> Dict:
 
 async def get_recent_replies(user_id: int, limit: int = 50) -> List[Dict]:
     """Get recent replies with video info"""
+    # Ensure user_id is int for asyncpg
+    user_id = int(user_id) if isinstance(user_id, str) else user_id
     async with pool.acquire() as conn:
         rows = await conn.fetch("""
             SELECT rc.*, v.title as video_title
@@ -778,6 +782,8 @@ async def get_recent_replies(user_id: int, limit: int = 50) -> List[Dict]:
 
 async def get_chart_data(user_id: int, days: int = 7) -> List[Dict]:
     """Get replies per day for chart"""
+    # Ensure user_id is int for asyncpg
+    user_id = int(user_id) if isinstance(user_id, str) else user_id
     async with pool.acquire() as conn:
         rows = await conn.fetch("""
             SELECT 
