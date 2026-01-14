@@ -38,11 +38,12 @@ class Settings(BaseSettings):
     # YouTube API (REQUIRED - set in environment variables)
     YOUTUBE_API_KEY: str = os.getenv("YOUTUBE_API_KEY", "")
     
-    # Quota limits
-    DAILY_QUOTA_LIMIT: int = 10000  # Global project limit (YouTube API)
-    USER_DAILY_REPLY_LIMIT: int = 500  # Per-user limit to prevent hogging
-    REPLY_COST: int = 50
-    FETCH_COST: int = 1
+    # Quota limits (500k total for 50 users)
+    DAILY_QUOTA_LIMIT: int = 500000  # Global project limit (YouTube API)
+    USER_DAILY_QUOTA_LIMIT: int = 10000  # Per-user quota units per day (~200 replies)
+    USER_DAILY_REPLY_LIMIT: int = 200  # Per-user max replies (10k / 50 cost)
+    REPLY_COST: int = 50  # Write operation cost
+    FETCH_COST: int = 1   # Read operation cost
     
     class Config:
         env_file = ".env"

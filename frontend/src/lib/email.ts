@@ -1,5 +1,5 @@
 import { Unosend } from '@unosend/node';
-import { generateOTPEmail, generateWelcomeEmail, generatePasswordResetEmail } from './email-templates';
+import { generateOTPEmail, generateWelcomeEmail, generatePasswordResetEmail, generateQuotaWarningEmail, generateErrorAlertEmail } from './email-templates';
 
 // Initialize Unosend client only if API key is available
 const unosend = process.env.UNOSEND_API_KEY
@@ -9,6 +9,7 @@ const unosend = process.env.UNOSEND_API_KEY
 // Email addresses
 const VERIFY_EMAIL = 'verify@tryreply.app';
 const WELCOME_EMAIL = 'farizanjum@tryreply.app';
+const ALERTS_EMAIL = 'alerts@tryreply.app';
 
 // Verify email connection (Unosend doesn't require verification)
 export async function verifyEmailConnection() {
@@ -99,3 +100,71 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
         return { success: false, error };
     }
 }
+
+// Send quota warning email
+export async function sendQuotaWarningEmail(
+    email: string,
+    usagePercent: number,
+    quotaUsed: number,
+    quotaLimit: number,
+    resetTime: string
+) {
+    try {
+        if (!unosend) {
+            console.warn('Email service not configured (UNOSEND_API_KEY missing)');
+            return { success: false, error: 'Email service not configured' };
+        }
+        const html = generateQuotaWarningEmail(usagePercent, quotaUsed, quotaLimit, resetTime);
+
+        const { data, error } = await unosend.emails.send({
+            from: `reply. Alerts <${ALERTS_EMAIL}>`,
+            to: email,
+            subject: `⚠️ ${usagePercent}% quota used - reply.`,
+            html,
+        });
+
+        if (error) {
+            console.error('Failed to send quota warning email:', error.message);
+            return { success: false, error };
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to send quota warning email:', error);
+        return { success: false, error };
+    }
+}
+
+// Send error alert email
+export async function sendErrorAlertEmail(
+    email: string,
+    errorMessage: string,
+    videoId?: string,
+    videoTitle?: string
+) {
+    try {
+        if (!unosend) {
+            console.warn('Email service not configured (UNOSEND_API_KEY missing)');
+            return { success: false, error: 'Email service not configured' };
+        }
+        const html = generateErrorAlertEmail(errorMessage, videoId, videoTitle);
+
+        const { data, error } = await unosend.emails.send({
+            from: `reply. Alerts <${ALERTS_EMAIL}>`,
+            to: email,
+            subject: '🚨 Processing error - reply.',
+            html,
+        });
+
+        if (error) {
+            console.error('Failed to send error alert email:', error.message);
+            return { success: false, error };
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to send error alert email:', error);
+        return { success: false, error };
+    }
+}
+

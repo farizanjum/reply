@@ -215,6 +215,58 @@ async def init_db():
             """)
         except:
             pass
+        
+        # Quota Logs table for per-user quota tracking
+        try:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS quota_logs (
+                    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+                    user_id VARCHAR(255) NOT NULL,
+                    operation VARCHAR(100) NOT NULL,
+                    quota_cost INTEGER NOT NULL,
+                    video_id VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+        except Exception as e:
+            print(f"Note: quota_logs table creation skipped: {e}")
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_quota_logs_user_date 
+                ON quota_logs(user_id, created_at)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_quota_logs_created 
+                ON quota_logs(created_at DESC)
+            """)
+        except:
+            pass
+        
+        # Migration: Add notification preferences columns
+        try:
+            await conn.execute("""
+                ALTER TABLE users 
+                ADD COLUMN IF NOT EXISTS notify_quota_warnings BOOLEAN DEFAULT TRUE
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                ALTER TABLE users 
+                ADD COLUMN IF NOT EXISTS notify_errors BOOLEAN DEFAULT TRUE
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                ALTER TABLE users 
+                ADD COLUMN IF NOT EXISTS last_quota_warning TIMESTAMP
+            """)
+        except:
+            pass
     
     print("✓ PostgreSQL database initialized with connection pool")
 
@@ -784,3 +836,204 @@ async def delete_user_template(user_id: int, template_id: int) -> bool:
             WHERE id = $1 AND user_id = $2
         """, template_id, user_id)
         return "DELETE 1" in result
+
+
+# ============================================
+# QUOTA TRACKING FUNCTIONS
+# ============================================
+
+async def create_quota_log(
+    user_id: str,
+    operation: str,
+    quota_cost: int,
+    video_id: str = None,
+    use_direct: bool = False
+):
+    """Log a quota usage event for accurate per-user tracking"""
+    import uuid
+    log_id = str(uuid.uuid4())  # Generate UUID in Python
+    query = """
+        INSERT INTO quota_logs (id, user_id, operation, quota_cost, video_id)
+        VALUES ($1, $2, $3, $4, $5)
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                await conn.execute(query, log_id, str(user_id), operation, quota_cost, video_id)
+        else:
+            async with pool.acquire() as conn:
+                await conn.execute(query, log_id, str(user_id), operation, quota_cost, video_id)
+    except Exception as e:
+        print(f"Error logging quota: {e}")
+
+
+async def get_user_quota_today(user_id: str, use_direct: bool = False) -> int:
+    """Get total quota units used by user today (accurate count)"""
+    query = """
+        SELECT COALESCE(SUM(quota_cost), 0) as total
+        FROM quota_logs 
+        WHERE user_id = $1 AND DATE(created_at) = CURRENT_DATE
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                result = await conn.fetchval(query, str(user_id))
+                return result or 0
+        else:
+            async with pool.acquire() as conn:
+                result = await conn.fetchval(query, str(user_id))
+                return result or 0
+    except Exception as e:
+        print(f"Error getting user quota: {e}")
+        return 0
+
+
+async def get_user_quota_history(user_id: str, days: int = 7, use_direct: bool = False) -> List[Dict]:
+    """Get quota usage per day for the last N days"""
+    query = """
+        SELECT 
+            DATE(created_at) as date,
+            SUM(quota_cost) as total_cost,
+            COUNT(*) as operation_count
+        FROM quota_logs
+        WHERE user_id = $1 AND created_at > NOW() - INTERVAL '%s days'
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+    """ % days
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                rows = await conn.fetch(query, str(user_id))
+                return [dict(row) for row in rows]
+        else:
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(query, str(user_id))
+                return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Error getting quota history: {e}")
+        return []
+
+
+async def get_global_quota_today(use_direct: bool = False) -> int:
+    """Get total quota units used by ALL users today (for admin monitoring)"""
+    query = """
+        SELECT COALESCE(SUM(quota_cost), 0) as total
+        FROM quota_logs 
+        WHERE DATE(created_at) = CURRENT_DATE
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                result = await conn.fetchval(query)
+                return result or 0
+        else:
+            async with pool.acquire() as conn:
+                result = await conn.fetchval(query)
+                return result or 0
+    except Exception as e:
+        print(f"Error getting global quota: {e}")
+        return 0
+
+
+# ============ Notification Preferences Functions ============
+
+async def get_notification_preferences(user_id, use_direct: bool = False):
+    """Get user's notification preferences"""
+    query = """
+        SELECT 
+            notify_quota_warnings,
+            notify_errors,
+            last_quota_warning
+        FROM users 
+        WHERE id = $1
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                row = await conn.fetchrow(query, int(user_id))
+                if row:
+                    return {
+                        'notify_quota_warnings': row['notify_quota_warnings'] if row['notify_quota_warnings'] is not None else True,
+                        'notify_errors': row['notify_errors'] if row['notify_errors'] is not None else True,
+                        'last_quota_warning': row['last_quota_warning'].isoformat() if row['last_quota_warning'] else None
+                    }
+        else:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(query, int(user_id))
+                if row:
+                    return {
+                        'notify_quota_warnings': row['notify_quota_warnings'] if row['notify_quota_warnings'] is not None else True,
+                        'notify_errors': row['notify_errors'] if row['notify_errors'] is not None else True,
+                        'last_quota_warning': row['last_quota_warning'].isoformat() if row['last_quota_warning'] else None
+                    }
+    except Exception as e:
+        print(f"Error getting notification preferences: {e}")
+    
+    # Default preferences
+    return {
+        'notify_quota_warnings': True,
+        'notify_errors': True,
+        'last_quota_warning': None
+    }
+
+
+async def update_notification_preferences(user_id, notify_quota_warnings: bool = None, notify_errors: bool = None, use_direct: bool = False):
+    """Update user's notification preferences"""
+    updates = []
+    params = []
+    param_idx = 1
+    
+    if notify_quota_warnings is not None:
+        updates.append(f"notify_quota_warnings = ${param_idx}")
+        params.append(notify_quota_warnings)
+        param_idx += 1
+    
+    if notify_errors is not None:
+        updates.append(f"notify_errors = ${param_idx}")
+        params.append(notify_errors)
+        param_idx += 1
+    
+    if not updates:
+        return True
+    
+    params.append(int(user_id))
+    query = f"""
+        UPDATE users 
+        SET {', '.join(updates)}
+        WHERE id = ${param_idx}
+    """
+    
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                await conn.execute(query, *params)
+                return True
+        else:
+            async with pool.acquire() as conn:
+                await conn.execute(query, *params)
+                return True
+    except Exception as e:
+        print(f"Error updating notification preferences: {e}")
+        return False
+
+
+async def update_last_quota_warning(user_id, use_direct: bool = False):
+    """Update the last quota warning timestamp to prevent spam"""
+    query = """
+        UPDATE users 
+        SET last_quota_warning = NOW()
+        WHERE id = $1
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                await conn.execute(query, int(user_id))
+                return True
+        else:
+            async with pool.acquire() as conn:
+                await conn.execute(query, int(user_id))
+                return True
+    except Exception as e:
+        print(f"Error updating last quota warning: {e}")
+        return False
+

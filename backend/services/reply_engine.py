@@ -118,7 +118,7 @@ class ReplyEngine:
                         return {
                             "success": False,
                             "comment_id": comment_id,
-                            "error": "Daily limit reached (500 replies/day)"
+                            "error": "Daily quota limit reached (10k units/day, ~200 replies)"
                         }
                     
                     # Check global quota
@@ -144,8 +144,17 @@ class ReplyEngine:
                     # Post reply
                     result = await self.youtube.post_comment_reply(comment_id, reply_text)
                     
-                    # Track quota
-                    await self.quota_manager.track_request(50, user_id=user_id)
+                    # Log quota usage with specific operation type for accurate tracking
+                    if hasattr(self.quota_manager, 'log_quota_usage'):
+                        await self.quota_manager.log_quota_usage(
+                            user_id=str(user_id),
+                            operation="REPLY",
+                            cost=settings.REPLY_COST,
+                            video_id=video_id
+                        )
+                    else:
+                        # Fallback for legacy quota manager
+                        await self.quota_manager.track_request(50, user_id=user_id)
                     
                     # Human delay AFTER posting
                     await self.delay_gen.after_reply()

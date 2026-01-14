@@ -335,3 +335,101 @@ export function generatePasswordResetEmail(resetUrl: string, email: string) {
 
   return generateEmailHtml('Reset Your Password', content);
 }
+
+// Quota Warning Email Template
+export function generateQuotaWarningEmail(
+  usagePercent: number,
+  quotaUsed: number,
+  quotaLimit: number,
+  resetTime: string
+) {
+  const dashboardUrl = 'https://www.tryreply.app/dashboard/analytics';
+
+  const content = `
+    <div class="card">
+      <h1 class="title">⚠️ Quota Warning</h1>
+      <p class="text">
+        You've used <strong style="color: #F97316;">${usagePercent}%</strong> of your daily YouTube API quota.
+      </p>
+      
+      <div class="otp-container" style="border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.12);">
+        <span class="otp-label" style="color: #FBBF24;">Current Usage</span>
+        <strong class="otp-code" style="color: #FBBF24; font-size: 42px;">${quotaUsed.toLocaleString()} / ${quotaLimit.toLocaleString()}</strong>
+        <p class="otp-expire">units used today</p>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <p class="text" style="font-size: 15px; color: #A1A1AA; text-align: left;">
+        <strong style="color: #D4D4D8;">What does this mean?</strong><br/>
+        • Each auto-reply uses 50 quota units<br/>
+        • You have approximately ${Math.floor((quotaLimit - quotaUsed) / 50)} replies remaining today<br/>
+        • Your quota resets ${resetTime}
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${dashboardUrl}" class="button">
+          View Analytics
+        </a>
+      </div>
+      
+      <p class="text" style="font-size: 13px; color: #71717A;">
+        You're receiving this because you enabled quota warning notifications.
+      </p>
+    </div>
+  `;
+
+  return generateEmailHtml('Quota Warning', content);
+}
+
+// Error Alert Email Template
+export function generateErrorAlertEmail(
+  errorMessage: string,
+  videoId?: string,
+  videoTitle?: string
+) {
+  const dashboardUrl = 'https://www.tryreply.app/dashboard';
+  const videoUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
+
+  const content = `
+    <div class="card">
+      <h1 class="title">🚨 Processing Error</h1>
+      <p class="text">
+        An error occurred while processing auto-replies${videoTitle ? ` for <strong style="color: #FFFFFF;">"${videoTitle}"</strong>` : ''}.
+      </p>
+      
+      <div class="otp-container" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.12);">
+        <span class="otp-label" style="color: #EF4444;">Error Details</span>
+        <p style="color: #FCA5A5; font-size: 15px; margin-top: 12px; word-break: break-word;">${errorMessage}</p>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <p class="text" style="font-size: 15px; color: #A1A1AA; text-align: left;">
+        <strong style="color: #D4D4D8;">What should you do?</strong><br/>
+        • Check your YouTube connection status<br/>
+        • Verify your video settings are correct<br/>
+        • Try triggering replies again manually<br/>
+        • If the issue persists, contact support
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        ${videoUrl ? `
+          <a href="${videoUrl}" class="button" style="margin-right: 12px; background: rgba(255,255,255,0.1); color: #FFFFFF; box-shadow: none;">
+            View Video
+          </a>
+        ` : ''}
+        <a href="${dashboardUrl}" class="button">
+          Go to Dashboard
+        </a>
+      </div>
+      
+      <p class="text" style="font-size: 13px; color: #71717A;">
+        You're receiving this because you enabled error notifications.
+      </p>
+    </div>
+  `;
+
+  return generateEmailHtml('Processing Error', content);
+}
+

@@ -106,3 +106,20 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+
+// ============================================
+// QUOTA TRACKING FOR PER-USER USAGE
+// ============================================
+
+model QuotaLog {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  operation   String   // REPLY, FETCH_COMMENTS, FETCH_VIDEOS, etc.
+  quotaCost   Int      @map("quota_cost")
+  videoId     String?  @map("video_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("quota_logs")
+}

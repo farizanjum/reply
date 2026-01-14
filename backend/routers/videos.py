@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Header, HTTPException
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 from db import (
     get_user_videos, update_video_settings, get_db_connection, 
@@ -9,8 +9,16 @@ from services.youtube_client import AsyncYouTubeClient
 import jwt
 from config import settings
 import json
+from datetime import datetime, timedelta
 
 router = APIRouter()
+
+# Rate limiting for trigger-reply endpoint
+TRIGGER_COOLDOWN_SECONDS = 30
+MAX_REPLIES_PER_TRIGGER = 20
+
+# In-memory rate limit store: { user_id: last_trigger_timestamp }
+user_trigger_timestamps: Dict[str, datetime] = {}
 
 class VideoSettings(BaseModel):
     auto_reply_enabled: bool
@@ -195,6 +203,25 @@ async def update_settings(
 async def trigger_reply(video_id: str, authorization: str = Header(None)):
     """Manually trigger auto-reply - Runs in background"""
     user = await get_current_user_from_header(authorization)
+    user_id = str(user['id'])
+    now = datetime.utcnow()
+    
+    # Rate limiting check
+    last_trigger = user_trigger_timestamps.get(user_id)
+    if last_trigger:
+        elapsed = (now - last_trigger).total_seconds()
+        if elapsed < TRIGGER_COOLDOWN_SECONDS:
+            remaining = int(TRIGGER_COOLDOWN_SECONDS - elapsed)
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "message": f"Please wait {remaining}s before triggering again",
+                    "cooldown_remaining": remaining
+                }
+            )
+    
+    # Update last trigger timestamp
+    user_trigger_timestamps[user_id] = now
     
     # Validate YouTube tokens are available
     if not user.get('access_token'):
@@ -307,6 +334,33 @@ async def trigger_reply(video_id: str, authorization: str = Header(None)):
     
     succeeded = sum(1 for r in results if r.get('success'))
     failed = sum(1 for r in results if not r.get('success'))
+    
+    # Check if we should send quota warning email (at 80% usage)
+    try:
+        user_email = user.get('email')
+        if user_email:
+            await quota_mgr.check_and_send_quota_warning(
+                user_id=str(user['id']),
+                user_email=user_email
+            )
+    except Exception as e:
+        print(f"Error checking quota warning: {e}")
+    
+    # Send error notification if all replies failed
+    if failed > 0 and succeeded == 0 and len(results) > 0:
+        try:
+            from services.notification_service import send_error_notification
+            error_messages = [r.get('error', 'Unknown error') for r in results if not r.get('success')]
+            first_error = error_messages[0] if error_messages else 'Failed to send replies'
+            await send_error_notification(
+                user_email=user.get('email', ''),
+                error_message=first_error,
+                video_id=video_id,
+                video_title=video.get('title'),
+                user_id=user['id']
+            )
+        except Exception as e:
+            print(f"Error sending error notification: {e}")
     
     return {
         "total_comments": len(comments),

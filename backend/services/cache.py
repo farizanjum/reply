@@ -141,19 +141,22 @@ class CacheManager:
 
 
 class QuotaManager:
-    """Redis-based distributed quota management
+    """Redis-based distributed quota management with database logging for accuracy
     
     Features:
     - Shared across all workers
-    - Per-user quota tracking
-    - Survives restarts
+    - Per-user quota tracking (10k units per user per day)
+    - Database-backed logging for accurate tracking
     - Automatic daily reset
     """
     
     def __init__(self, cache: CacheManager):
         self.cache = cache
-        self.daily_limit = settings.DAILY_QUOTA_LIMIT
-        self.user_daily_limit = settings.USER_DAILY_REPLY_LIMIT
+        self.daily_limit = settings.DAILY_QUOTA_LIMIT  # 500k global
+        self.user_daily_quota_limit = settings.USER_DAILY_QUOTA_LIMIT  # 10k per user
+        self.user_daily_reply_limit = settings.USER_DAILY_REPLY_LIMIT  # ~200 replies
+        self.reply_cost = settings.REPLY_COST  # 50 units
+        self.fetch_cost = settings.FETCH_COST  # 1 unit
     
     def _get_quota_key(self, user_id: Optional[int] = None) -> str:
         """Get quota key for today"""
@@ -162,49 +165,78 @@ class QuotaManager:
             return f"quota:{user_id}:{today}"
         return f"quota:global:{today}"
     
+    async def log_quota_usage(self, user_id: str, operation: str, cost: int, video_id: str = None):
+        """Log quota usage to database for accurate tracking"""
+        from database_pg import create_quota_log
+        await create_quota_log(str(user_id), operation, cost, video_id)
+        
+        # Also track in Redis for fast lookups
+        key = self._get_quota_key(user_id)
+        pipe = self.cache.redis.pipeline()
+        pipe.incrby(key, cost)
+        pipe.expire(key, 86400 * 2)
+        await pipe.execute()
+    
+    async def get_user_quota_usage_today(self, user_id: str) -> int:
+        """Get accurate quota units used by user today from database"""
+        from database_pg import get_user_quota_today
+        return await get_user_quota_today(str(user_id))
+    
+    async def get_user_quota_remaining(self, user_id: str) -> int:
+        """Get remaining quota units for user today"""
+        used = await self.get_user_quota_usage_today(str(user_id))
+        return max(0, self.user_daily_quota_limit - used)
+    
+    async def get_user_quota_history(self, user_id: str, days: int = 7):
+        """Get quota usage per day for last N days"""
+        from database_pg import get_user_quota_history
+        return await get_user_quota_history(str(user_id), days=days)
+    
     async def get_current_usage(self, user_id: Optional[int] = None) -> int:
-        """Get today's quota usage"""
+        """Get today's quota usage from Redis (fast check)"""
         key = self._get_quota_key(user_id)
         usage = await self.cache.redis.get(key)
         return int(usage) if usage else 0
     
     async def get_user_reply_count(self, user_id: int) -> int:
-        """Get THIS user's reply count today from Redis"""
-        # Use the user-specific quota key which tracks reply count
-        key = self._get_quota_key(user_id)
-        count = await self.cache.redis.get(key)
-        # Note: In Redis mode, we track quota units, not reply count
-        # Each reply costs 50 units, so we divide by 50 to get approximate reply count
-        # For exact count, we fall back to DB
+        """Get THIS user's reply count today from DB"""
         from db import get_reply_stats
         stats = await get_reply_stats(user_id, days=1)
         return stats.get('total_replies', 0) if stats else 0
     
     async def can_user_reply(self, user_id: int) -> bool:
-        """Check if user hasn't exceeded their daily limit"""
-        user_replies_today = await self.get_user_reply_count(user_id)
-        return user_replies_today < self.user_daily_limit
+        """Check if user has quota remaining for a reply"""
+        remaining = await self.get_user_quota_remaining(str(user_id))
+        return remaining >= self.reply_cost
     
     async def get_user_remaining_replies(self, user_id: int) -> int:
         """Get how many replies user can still send today"""
-        user_replies_today = await self.get_user_reply_count(user_id)
-        return max(0, self.user_daily_limit - user_replies_today)
+        remaining_quota = await self.get_user_quota_remaining(str(user_id))
+        return remaining_quota // self.reply_cost
     
     async def can_make_request(self, cost: int, user_id: Optional[int] = None) -> bool:
         """Check if request can be made within quota"""
+        if user_id:
+            remaining = await self.get_user_quota_remaining(str(user_id))
+            return remaining >= cost
         current = await self.get_current_usage(user_id)
         return (current + cost) <= self.daily_limit
     
     async def track_request(self, cost: int, user_id: Optional[int] = None):
-        """Track API request quota usage"""
-        key = self._get_quota_key(user_id)
-        pipe = self.cache.redis.pipeline()
-        pipe.incrby(key, cost)
-        pipe.expire(key, 86400 * 2)  # 2 day TTL for safety
-        await pipe.execute()
+        """Track API request quota usage in Redis and DB"""
+        if user_id:
+            await self.log_quota_usage(str(user_id), "API_REQUEST", cost)
+        else:
+            key = self._get_quota_key(user_id)
+            pipe = self.cache.redis.pipeline()
+            pipe.incrby(key, cost)
+            pipe.expire(key, 86400 * 2)
+            await pipe.execute()
     
     async def get_remaining_quota(self, user_id: Optional[int] = None) -> int:
         """Get remaining quota for today"""
+        if user_id:
+            return await self.get_user_quota_remaining(str(user_id))
         used = await self.get_current_usage(user_id)
         return max(0, self.daily_limit - used)
     

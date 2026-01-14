@@ -60,12 +60,13 @@ app.add_middleware(
 )
 
 # Import and register routers
-from routers import auth, videos, analytics, templates
+from routers import auth, videos, analytics, templates, notifications
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(videos.router, prefix="/api/videos", tags=["videos"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(templates.router, prefix="/api/templates", tags=["templates"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
 
 # Health check
 @app.get("/health")

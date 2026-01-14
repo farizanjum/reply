@@ -53,6 +53,12 @@ export default function SettingsPage() {
     const [showReAuthModal, setShowReAuthModal] = useState(false);
     const [pendingAction, setPendingAction] = useState<'remove-password' | 'link-google' | null>(null);
 
+    // Notification preferences state
+    const [notifyQuotaWarnings, setNotifyQuotaWarnings] = useState(true);
+    const [notifyErrors, setNotifyErrors] = useState(true);
+    const [loadingNotifications, setLoadingNotifications] = useState(false);
+    const [savingNotifications, setSavingNotifications] = useState(false);
+
     const tabs = [
         { id: 'profile', label: 'Profile', icon: User },
         { id: 'connections', label: 'Connections', icon: Link2 },
@@ -65,7 +71,56 @@ export default function SettingsPage() {
     // Check password status on mount
     useEffect(() => {
         checkPasswordStatus();
+        fetchNotificationPreferences();
     }, []);
+
+    // Fetch notification preferences
+    const fetchNotificationPreferences = async () => {
+        setLoadingNotifications(true);
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications/preferences`, {
+                headers: {
+                    'Authorization': `Bearer ${document.cookie.split('better-auth.session_token=')[1]?.split(';')[0] || ''}`
+                },
+                credentials: 'include'
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setNotifyQuotaWarnings(data.notify_quota_warnings ?? true);
+                setNotifyErrors(data.notify_errors ?? true);
+            }
+        } catch (error) {
+            console.error('Failed to fetch notification preferences:', error);
+        } finally {
+            setLoadingNotifications(false);
+        }
+    };
+
+    // Update notification preferences
+    const updateNotificationPreferences = async (key: 'notify_quota_warnings' | 'notify_errors', value: boolean) => {
+        setSavingNotifications(true);
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications/preferences`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${document.cookie.split('better-auth.session_token=')[1]?.split(';')[0] || ''}`
+                },
+                credentials: 'include',
+                body: JSON.stringify({ [key]: value })
+            });
+            if (response.ok) {
+                toast.success('Preferences saved');
+            } else {
+                toast.error('Failed to save preferences');
+            }
+        } catch (error) {
+            console.error('Failed to update notification preferences:', error);
+            toast.error('Failed to save preferences');
+        } finally {
+            setSavingNotifications(false);
+        }
+    };
 
     // Note: youtubeConnected is now derived from syncState, no need for useEffect sync
 
@@ -758,23 +813,63 @@ export default function SettingsPage() {
             {activeTab === 'notifications' && (
                 <Card variant="glass" className="p-6 bg-white/[0.02] backdrop-blur-sm border-white/5">
                     <h3 className="text-lg font-semibold text-white mb-4">Notification Preferences</h3>
-                    <div className="space-y-4">
-                        {[
-                            { label: 'Email notifications for new replies', desc: 'Get notified when auto-replies are sent' },
-                            { label: 'Quota warnings', desc: 'Alert me when approaching daily quota limit' },
-                            { label: 'Error notifications', desc: 'Notify me of any processing errors' },
-                        ].map((item, i) => (
-                            <div key={i} className="flex items-center justify-between p-4 bg-[#0A0A0A] rounded-xl border border-white/5">
+                    {loadingNotifications ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="w-6 h-6 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {/* Quota Warnings Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-[#0A0A0A] rounded-xl border border-white/5">
                                 <div>
-                                    <p className="text-sm font-medium text-white">{item.label}</p>
-                                    <p className="text-xs text-[#A1A1AA]">{item.desc}</p>
+                                    <p className="text-sm font-medium text-white">Quota warnings</p>
+                                    <p className="text-xs text-[#A1A1AA]">Alert me when approaching daily quota limit (80%)</p>
                                 </div>
-                                <button className="relative w-12 h-6 rounded-full bg-white/10">
-                                    <span className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform" />
+                                <button
+                                    onClick={() => {
+                                        const newValue = !notifyQuotaWarnings;
+                                        setNotifyQuotaWarnings(newValue);
+                                        updateNotificationPreferences('notify_quota_warnings', newValue);
+                                    }}
+                                    disabled={savingNotifications}
+                                    className={`relative w-12 h-6 rounded-full transition-colors ${notifyQuotaWarnings ? 'bg-orange-500' : 'bg-white/10'
+                                        }`}
+                                >
+                                    <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${notifyQuotaWarnings ? 'translate-x-6' : 'translate-x-0.5'
+                                        }`} />
                                 </button>
                             </div>
-                        ))}
-                    </div>
+
+                            {/* Error Notifications Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-[#0A0A0A] rounded-xl border border-white/5">
+                                <div>
+                                    <p className="text-sm font-medium text-white">Error notifications</p>
+                                    <p className="text-xs text-[#A1A1AA]">Notify me of any processing errors</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const newValue = !notifyErrors;
+                                        setNotifyErrors(newValue);
+                                        updateNotificationPreferences('notify_errors', newValue);
+                                    }}
+                                    disabled={savingNotifications}
+                                    className={`relative w-12 h-6 rounded-full transition-colors ${notifyErrors ? 'bg-orange-500' : 'bg-white/10'
+                                        }`}
+                                >
+                                    <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${notifyErrors ? 'translate-x-6' : 'translate-x-0.5'
+                                        }`} />
+                                </button>
+                            </div>
+
+                            {/* Info note */}
+                            <div className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-xl">
+                                <p className="text-xs text-[#A1A1AA]">
+                                    Emails are sent to <span className="text-orange-400 font-medium">{user?.email}</span>.
+                                    Quota warnings are sent once per day when you reach 80% usage.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </Card>
             )}
 

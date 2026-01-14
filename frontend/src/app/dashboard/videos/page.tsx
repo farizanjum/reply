@@ -88,6 +88,22 @@ export default function VideosPage() {
         return false;
     });
 
+    // Cooldown state for rate limiting
+    const [cooldownRemaining, setCooldownRemaining] = useState(0);
+    const [showCooldownToast, setShowCooldownToast] = useState(false);
+
+    // Cooldown timer effect
+    useEffect(() => {
+        if (cooldownRemaining > 0) {
+            const timer = setTimeout(() => {
+                setCooldownRemaining(prev => prev - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        } else {
+            setShowCooldownToast(false);
+        }
+    }, [cooldownRemaining]);
+
     // Success toast state
     const [showSuccessToast, setShowSuccessToast] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
@@ -306,11 +322,27 @@ export default function VideosPage() {
 
                 return response;
             } catch (error: any) {
+                // Handle rate limiting (429) specially
+                if (error.response?.status === 429) {
+                    const detail = error.response?.data?.detail;
+                    const remaining = detail?.cooldown_remaining || 30;
+                    setCooldownRemaining(remaining);
+                    setShowCooldownToast(true);
+
+                    // Clear processing status for this video
+                    setProcessingVideos(prev => {
+                        const newMap = new Map(prev);
+                        newMap.delete(videoId);
+                        return newMap;
+                    });
+                    return; // Don't show error state for rate limiting
+                }
+
                 setProcessingVideos(prev => new Map(prev).set(videoId, {
                     videoId,
                     status: 'error',
                     progress: 0,
-                    error: error.response?.data?.detail || error.message || 'Failed to process'
+                    error: error.response?.data?.detail?.message || error.response?.data?.detail || error.message || 'Failed to process'
                 }));
 
                 // Clear error after 10 seconds
@@ -474,6 +506,32 @@ export default function VideosPage() {
                 </div>
             )}
 
+            {/* Cooldown Toast */}
+            {showCooldownToast && (
+                <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
+                    <div className="bg-amber-500/20 backdrop-blur-md border border-amber-500/30 rounded-xl px-4 py-3 shadow-lg min-w-[280px]">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-8 h-8 bg-amber-500/30 rounded-full flex items-center justify-center">
+                                <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+                            </div>
+                            <div>
+                                <span className="text-amber-200 text-sm font-medium block">Cooldown Active</span>
+                                <span className="text-amber-300/70 text-xs">Please wait before triggering again</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-1000"
+                                    style={{ width: `${(cooldownRemaining / 30) * 100}%` }}
+                                />
+                            </div>
+                            <span className="text-amber-400 text-xs font-mono w-8">{cooldownRemaining}s</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
@@ -521,11 +579,16 @@ export default function VideosPage() {
                                             size="sm"
                                             variant="secondary"
                                             onClick={() => triggerMutation.mutate(video.video_id)}
-                                            disabled={!!processingStatus}
-                                            className="backdrop-blur-md bg-white/10 hover:bg-white/20 border-white/20"
+                                            disabled={!!processingStatus || cooldownRemaining > 0}
+                                            className={`backdrop-blur-md border-white/20 ${cooldownRemaining > 0
+                                                    ? 'bg-amber-500/20 hover:bg-amber-500/30'
+                                                    : 'bg-white/10 hover:bg-white/20'
+                                                }`}
                                         >
                                             {processingStatus ? (
                                                 <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : cooldownRemaining > 0 ? (
+                                                <span className="text-xs font-mono text-amber-400">{cooldownRemaining}s</span>
                                             ) : (
                                                 <Play className="w-4 h-4" />
                                             )}
