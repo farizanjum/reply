@@ -64,7 +64,9 @@ export default function SignUpPage() {
             const { signIn } = await import('@/lib/auth-client');
             await signIn.social({
                 provider: 'google',
-                callbackURL: `${baseUrl}/dashboard`,
+                // Include youtube_reconnect=1 so the dashboard layout calls /api/youtube/reconnect
+                // This ensures youtubeConnected flag is properly set and session is refreshed
+                callbackURL: `${baseUrl}/dashboard?youtube_reconnect=1`,
             });
         } catch (error: any) {
             setAuthError(error.message || 'Failed to sign in with Google');

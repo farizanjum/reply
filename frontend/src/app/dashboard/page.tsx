@@ -21,10 +21,14 @@ import { useSession } from '@/lib/auth-client';
 import { useState } from 'react';
 import { DashboardSkeleton } from '@/components/ui/LoadingSkeletons';
 import { connectYouTube } from '@/lib/youtube-connect';
+import { useYouTubeSync } from '@/lib/useYouTubeSync';
 
 export default function DashboardPage() {
     const { data: session } = useSession();
     const [ytBannerDismissed, setYtBannerDismissed] = useState(false);
+
+    // Multi-tab sync hook - listens for broadcast state changes from other tabs/components
+    const { syncState } = useYouTubeSync();
 
     // Fetch analytics from new Next.js API
     const { data: analytics, isLoading: analyticsLoading } = useQuery({
@@ -80,14 +84,14 @@ export default function DashboardPage() {
     ];
 
     // Check if YouTube is connected
-    // Use ONLY the youtubeConnected flag from the database
-    // This is set when: (1) User logs in via Google OAuth with YouTube scopes granted
-    // or (2) Email user explicitly connects YouTube
+    // Priority: syncState (real-time broadcast) > session (cached)
+    // syncState updates immediately when connect/disconnect happens in any tab
     const userWithExtras = session?.user as any;
 
-    // Don't use image URL check - it's unreliable
-    // The youtubeConnected flag is set properly during OAuth callback
-    const youtubeConnected = userWithExtras?.youtubeConnected === true;
+    // Use syncState if available (real-time updates), fallback to session
+    const youtubeConnected = syncState !== null
+        ? syncState.connected
+        : userWithExtras?.youtubeConnected === true;
 
     // Show skeleton while data is initially loading (but not on refetch)
     const isInitialLoading = (analyticsLoading || videosLoading) && !analytics && !videosData;

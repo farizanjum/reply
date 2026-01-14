@@ -16,8 +16,13 @@ export default function SettingsPage() {
     const user = session?.user as any;
     const [activeTab, setActiveTab] = useState('profile');
 
-    // Multi-tab sync for YouTube state
-    const { broadcast } = useYouTubeSync();
+    // Multi-tab sync for YouTube state - syncState provides real-time updates
+    const { syncState, broadcast } = useYouTubeSync();
+
+    // Derive YouTube connection status from syncState (real-time) or session (fallback)
+    const youtubeConnected = syncState !== null
+        ? syncState.connected
+        : user?.youtubeConnected ?? false;
 
     // Check if user is accessing via delegation (restricted access)
     const [isDelegation, setIsDelegation] = useState(false);
@@ -40,8 +45,7 @@ export default function SettingsPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // YouTube connection state
-    const [youtubeConnected, setYoutubeConnected] = useState<boolean>(user?.youtubeConnected ?? false);
+    // YouTube disconnect UI state (youtubeConnected is derived from syncState above)
     const [isDisconnecting, setIsDisconnecting] = useState(false);
     const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
 
@@ -63,12 +67,7 @@ export default function SettingsPage() {
         checkPasswordStatus();
     }, []);
 
-    // Update YouTube connection status when user changes
-    useEffect(() => {
-        if (user) {
-            setYoutubeConnected(user.youtubeConnected ?? false);
-        }
-    }, [user]);
+    // Note: youtubeConnected is now derived from syncState, no need for useEffect sync
 
     // YouTube disconnect handler
     const handleDisconnectYouTube = async () => {
@@ -84,11 +83,9 @@ export default function SettingsPage() {
             const data = await response.json();
 
             if (response.ok) {
-                // Update local state
-                setYoutubeConnected(false);
                 setShowDisconnectConfirm(false);
 
-                // Broadcast to all other tabs
+                // Broadcast to all tabs (including this one via localStorage + state update)
                 broadcast({ connected: false, channelName: null });
 
                 // Force refresh auth session to update cookie
