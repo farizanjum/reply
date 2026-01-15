@@ -14,6 +14,8 @@ import { authApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession, signOut } from '@/lib/auth-client';
+import { NavLogo, FooterLogo, IconLogo } from '@/components/ui/LiquidMetalLogo';
+import ScrollRevealVideo from '@/components/ui/ScrollRevealVideo';
 
 // Lazy load heavy components - these use Three.js/WebGL and are render-blocking
 const CardSpotlight = lazy(() => import('@/components/ui/card-spotlight').then(mod => ({ default: mod.CardSpotlight })));
@@ -77,9 +79,9 @@ export default function LandingPage() {
       {/* Sticky Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#050505]/70 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold tracking-tight">reply.</span>
-          </div>
+          <Link href="/" className="flex items-center gap-2 -my-3">
+            <IconLogo size={64} />
+          </Link>
           <div className="flex items-center gap-6">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
@@ -370,11 +372,42 @@ export default function LandingPage() {
         </Suspense>
       </section>
 
+      {/* Framer-Style Video Section - Everything in One Container */}
+      <section className="relative z-10 bg-[#000000] py-12 md:py-0 md:min-h-screen md:pt-20 flex flex-col items-center overflow-hidden">
+
+        {/* Text & Button - positioned at top with higher z-index */}
+        <div className="flex flex-col items-center justify-center text-center px-4 mb-4 md:mb-2 relative z-20">
+          <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-4 md:mb-6 leading-[1.1] text-white">
+            Reply Fast.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#FF4D00] to-[#FF8000]">
+              No Cost.
+            </span>
+          </h2>
+
+          <Link
+            href="/auth/signup"
+            className="px-6 py-3 md:px-10 md:py-4 text-base md:text-lg font-bold bg-white text-black rounded-full hover:bg-gray-100 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] transform hover:-translate-y-1"
+          >
+            Get Started
+          </Link>
+        </div>
+
+        {/* Video - Below text, immediately follows on mobile, pushes to bottom on desktop */}
+        <div className="w-full max-w-5xl px-2 md:px-4 mt-4 md:mt-0 md:flex-1 flex items-center md:items-end justify-center relative z-10 md:-mb-1">
+          <ScrollRevealVideo
+            src="/reply-animation-optimized.mp4"
+            posterTime={6.0}
+            className="!py-0"
+          />
+        </div>
+
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 px-6 relative z-10 bg-[#050505]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tighter">reply.</span>
+          <div className="flex items-center gap-3">
+            <IconLogo size={64} />
             <span className="text-xs text-[#52525B]">© 2026</span>
           </div>
           <div className="flex gap-8 text-sm text-[#A1A1AA]">

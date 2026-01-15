@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CardSpotlight, GlassButton, Tiles } from '@/components/auth/AuthComponents';
+import { IconLogo } from '@/components/ui/LiquidMetalLogo';
 import '@/components/auth/auth.css';
 
 export default function ResetPasswordPage() {
@@ -98,10 +99,8 @@ export default function ResetPasswordPage() {
                 <CardSpotlight className="w-full shadow-[0_0_50px_-10px_rgba(0,0,0,0.8)] border border-white/10 bg-black/80 backdrop-blur-sm">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6">
-                            <a href="https://www.tryreply.app" target="_blank" rel="noopener noreferrer">
-                                <img src="/reply_logo.jpg" alt="reply." className="w-14 h-14 rounded-2xl cursor-pointer hover:opacity-80 transition-opacity" />
-                            </a>
+                        <div className="inline-flex items-center justify-center mb-6">
+                            <IconLogo size={56} href="https://www.tryreply.app" />
                         </div>
                         <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
                             Reset password
