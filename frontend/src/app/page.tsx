@@ -373,7 +373,7 @@ export default function LandingPage() {
       </section>
 
       {/* Framer-Style Video Section - Everything in One Container */}
-      <section className="relative z-10 bg-[#000000] py-12 md:py-0 md:min-h-screen md:pt-20 flex flex-col items-center overflow-hidden">
+      <section className="relative z-10 bg-[#000000] pt-12 md:pt-0 md:min-h-screen md:pt-20 flex flex-col items-center overflow-hidden">
 
         {/* Text & Button - positioned at top with higher z-index */}
         <div className="flex flex-col items-center justify-center text-center px-4 mb-4 md:mb-2 relative z-20">
@@ -393,7 +393,7 @@ export default function LandingPage() {
         </div>
 
         {/* Video - Below text, immediately follows on mobile, pushes to bottom on desktop */}
-        <div className="w-full max-w-5xl px-2 md:px-4 mt-4 md:mt-0 md:flex-1 flex items-center md:items-end justify-center relative z-10 md:-mb-1">
+        <div className="w-full max-w-5xl px-2 md:px-4 mt-4 md:mt-0 md:flex-1 flex items-center md:items-end justify-center relative z-10 -mb-1">
           <ScrollRevealVideo
             src="/reply-animation-optimized.mp4"
             posterTime={6.0}
