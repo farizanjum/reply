@@ -39,8 +39,7 @@ async def get_current_user(authorization: str = Header(None)):
             algorithms=["HS256"]
         )
         
-        print(f"🔐 AUTH DEBUG: Token payload keys: {list(payload.keys())}")
-        print(f"🔐 AUTH DEBUG: source={payload.get('source')}, email={payload.get('email')}, user_id={payload.get('user_id')}")
+
         
         # Check if this is a Better Auth token (has 'source' field)
         if payload.get('source') == 'better_auth':
@@ -52,7 +51,7 @@ async def get_current_user(authorization: str = Header(None)):
             
             # Get user by email
             user = await get_user_by_email(email)
-            print(f"🔐 AUTH DEBUG: Better Auth path - email={email}, found user_id={user['id'] if user else None}")
+
             
             if not user:
                 # Auto-create user for Better Auth

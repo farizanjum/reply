@@ -254,8 +254,8 @@ def sync_user_videos(self, user_id: int) -> Dict:
                 'comment_count': int(stats.get('commentCount', 0))
             })
         
-        # Bulk insert
-        count = await upsert_videos_batch(user_id, video_data)
+        # Bulk insert (use_direct=True because we're in Celery worker where pool is None)
+        count = await upsert_videos_batch(user_id, video_data, use_direct=True)
         
         # Invalidate cache
         from config import settings

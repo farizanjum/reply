@@ -571,49 +571,62 @@ async def upsert_video(user_id: int, video_data: Dict) -> Dict:
 # BATCH VIDEO UPSERT (100x faster)
 # ============================================
 
-async def upsert_videos_batch(user_id: int, videos: List[Dict]) -> int:
-    """Bulk upsert videos - 100x faster than individual inserts"""
+async def upsert_videos_batch(user_id: int, videos: List[Dict], use_direct: bool = False) -> int:
+    """Bulk upsert videos - 100x faster than individual inserts
+    
+    Args:
+        user_id: The user ID to associate videos with
+        videos: List of video dictionaries to upsert
+        use_direct: If True or pool is None, use direct connection (for Celery workers)
+    """
     if not videos:
         return 0
     
-    async with pool.acquire() as conn:
-        # Prepare data
-        records = []
-        for v in videos:
-            published_at = v['published_at']
-            if isinstance(published_at, str):
-                published_at = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
-            # Convert to naive UTC datetime (strip timezone info)
-            if hasattr(published_at, 'tzinfo') and published_at.tzinfo is not None:
-                published_at = published_at.replace(tzinfo=None)
-            
-            records.append((
-                user_id,
-                v['video_id'],
-                v['title'],
-                v.get('description', ''),
-                v['thumbnail_url'],
-                published_at,
-                v.get('view_count', 0),
-                v.get('comment_count', 0)
-            ))
+    # Prepare data
+    records = []
+    for v in videos:
+        published_at = v['published_at']
+        if isinstance(published_at, str):
+            published_at = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
+        # Convert to naive UTC datetime (strip timezone info)
+        if hasattr(published_at, 'tzinfo') and published_at.tzinfo is not None:
+            published_at = published_at.replace(tzinfo=None)
         
-        # Use executemany with ON CONFLICT
-        await conn.executemany("""
-            INSERT INTO videos (
-                user_id, video_id, title, description,
-                thumbnail_url, published_at, view_count, comment_count
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (video_id) DO UPDATE SET
-                title = EXCLUDED.title,
-                description = EXCLUDED.description,
-                view_count = EXCLUDED.view_count,
-                comment_count = EXCLUDED.comment_count,
-                updated_at = NOW()
-        """, records)
-        
-        return len(records)
+        records.append((
+            user_id,
+            v['video_id'],
+            v['title'],
+            v.get('description', ''),
+            v['thumbnail_url'],
+            published_at,
+            v.get('view_count', 0),
+            v.get('comment_count', 0)
+        ))
+    
+    # Use executemany with ON CONFLICT
+    query = """
+        INSERT INTO videos (
+            user_id, video_id, title, description,
+            thumbnail_url, published_at, view_count, comment_count
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (video_id) DO UPDATE SET
+            title = EXCLUDED.title,
+            description = EXCLUDED.description,
+            view_count = EXCLUDED.view_count,
+            comment_count = EXCLUDED.comment_count,
+            updated_at = NOW()
+    """
+    
+    # Auto-use direct connection if pool not initialized (Celery worker)
+    if use_direct or pool is None:
+        async with get_direct_connection() as conn:
+            await conn.executemany(query, records)
+    else:
+        async with pool.acquire() as conn:
+            await conn.executemany(query, records)
+    
+    return len(records)
 
 
 # ============================================
