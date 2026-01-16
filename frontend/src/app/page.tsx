@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { useSession, signOut } from '@/lib/auth-client';
 import { NavLogo, FooterLogo, IconLogo } from '@/components/ui/LiquidMetalLogo';
 import ScrollRevealVideo from '@/components/ui/ScrollRevealVideo';
+import FAQSection from '@/components/ui/FAQSection';
 
 // Lazy load heavy components - these use Three.js/WebGL and are render-blocking
 const CardSpotlight = lazy(() => import('@/components/ui/card-spotlight').then(mod => ({ default: mod.CardSpotlight })));
@@ -371,6 +372,9 @@ export default function LandingPage() {
           </div>
         </Suspense>
       </section>
+
+      {/* FAQ Section */}
+      <FAQSection />
 
       {/* Framer-Style Video Section - Everything in One Container */}
       <section className="relative z-10 bg-[#000000] pt-12 md:pt-0 md:min-h-screen md:pt-20 flex flex-col items-center overflow-hidden">

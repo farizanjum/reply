@@ -299,3 +299,38 @@ body {
 .animate-fadeInUp {
   animation: fadeInUp 0.5s ease-out forwards;
 }
+
+/* Accordion animations for FAQ section - Optimized for INP */
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.15s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: height, opacity;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.15s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: height, opacity;
+}
