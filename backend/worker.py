@@ -57,6 +57,20 @@ celery_app.conf.update(
     broker_use_ssl=broker_use_ssl,
     redis_backend_use_ssl=broker_use_ssl,
     
+    # Connection retry settings for intermittent SSL issues
+    broker_connection_retry=True,
+    broker_connection_retry_on_startup=True,
+    broker_connection_max_retries=10,
+    
+    # Transport options for more reliable connections
+    broker_transport_options={
+        'visibility_timeout': 3600,
+        'socket_timeout': 30,
+        'socket_connect_timeout': 30,
+        'retry_on_timeout': True,
+        'health_check_interval': 30,
+    },
+    
     # Serialization
     task_serializer='json',
     result_serializer='json',
@@ -87,6 +101,7 @@ celery_app.conf.update(
     result_backend_transport_options={
         'master_name': 'mymaster',
         'visibility_timeout': 3600,
+        'retry_on_timeout': True,
     },
     
     # Timezone
