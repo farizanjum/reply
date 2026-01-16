@@ -92,13 +92,25 @@ export const videosApi = {
     getSettings: (videoId: string) => api.get(`/api/videos/${videoId}/settings`),
     updateSettings: (videoId: string, settings: any) =>
         api.put(`/api/videos/${videoId}/settings`, settings),
-    triggerReply: (videoId: string) =>
-        api.post(`/api/videos/${videoId}/trigger-reply`),
+    triggerReply: async (videoId: string) => {
+        // Use frontend API route for consistent auth (fresh token every time)
+        const response = await fetch(`/api/youtube/trigger/${videoId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            const error: any = new Error(data.detail || data.error || 'Failed to trigger reply');
+            error.response = { status: response.status, data };
+            throw error;
+        }
+        return { data };
+    },
 };
 
 export const analyticsApi = {
     getAnalytics: async () => {
-        // Use frontend API route for consistent auth handling (same as chart data)
+        // Use frontend API route for consistent auth (fresh token every time)
         const response = await fetch('/api/youtube/analytics');
         if (!response.ok) throw new Error('Failed to fetch analytics');
         const data = await response.json();

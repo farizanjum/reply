@@ -202,6 +202,7 @@ async def update_settings(
 @router.post("/{video_id}/trigger-reply")
 async def trigger_reply(video_id: str, authorization: str = Header(None)):
     """Manually trigger auto-reply - Runs in background"""
+    print(f"🎯 TRIGGER-REPLY CALLED: video_id={video_id}")  # DEBUG
     user = await get_current_user_from_header(authorization)
     user_id = str(user['id'])
     now = datetime.utcnow()
@@ -234,11 +235,28 @@ async def trigger_reply(video_id: str, authorization: str = Header(None)):
     
     # Get video settings
     async with get_db_connection() as conn:
+        # Debug: check if video exists at all
+        all_videos_for_user = await conn.fetch(
+            "SELECT video_id, user_id FROM videos WHERE user_id = $1 LIMIT 10",
+            user['id']
+        )
+        print(f"🔍 DEBUG: Looking for video_id={video_id}, user_id={user['id']}")
+        print(f"🔍 DEBUG: User has {len(all_videos_for_user)} videos: {[r['video_id'] for r in all_videos_for_user]}")
+        
         row = await conn.fetchrow(
             "SELECT * FROM videos WHERE video_id = $1 AND user_id = $2",
             video_id, user['id']
         )
         if not row:
+            # Debug: Check if video exists for ANY user
+            any_video = await conn.fetchrow(
+                "SELECT video_id, user_id FROM videos WHERE video_id = $1",
+                video_id
+            )
+            if any_video:
+                print(f"⚠️ DEBUG: Video exists but for user_id={any_video['user_id']}, not {user['id']}")
+            else:
+                print(f"❌ DEBUG: Video {video_id} does NOT exist in database for ANY user")
             raise HTTPException(404, "Video not found")
         video = dict(row)
         # Parse JSON fields
