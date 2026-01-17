@@ -2,7 +2,7 @@
 
 import { analyticsApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, TrendingUp, TrendingDown, MessageSquare, Zap, Clock, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, MessageSquare, Zap, Clock, ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import {
@@ -75,12 +75,15 @@ function useCountdown(targetDate: string | null) {
 
 export default function AnalyticsPage() {
     const [selectedPeriod, setSelectedPeriod] = useState<number>(7);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const ITEMS_PER_PAGE = 10;
 
-    const { data: analytics, isLoading } = useQuery({
-        queryKey: ['analytics'],
+    const { data: analytics, isLoading, refetch } = useQuery({
+        queryKey: ['analytics', currentPage],
         queryFn: async () => {
-            const response = await analyticsApi.getAnalytics();
-            return response.data;
+            const response = await fetch(`/api/youtube/analytics?page=${currentPage}&limit=${ITEMS_PER_PAGE}`);
+            if (!response.ok) throw new Error('Failed to fetch analytics');
+            return response.json();
         },
     });
 
@@ -276,7 +279,7 @@ export default function AnalyticsPage() {
                         </div>
                     ) : chartData && chartData.length > 0 ? (
                         <>
-                            <div className="h-[300px] w-full">
+                            <div className="h-[300px] w-full min-h-[300px]">
                                 <ChartContainer config={{
                                     replies: {
                                         label: "Replies",
@@ -404,6 +407,44 @@ export default function AnalyticsPage() {
                                     ))}
                                 </tbody>
                             </table>
+
+                            {/* Pagination Controls */}
+                            {analytics?.pagination && analytics.pagination.pages > 1 && (
+                                <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between">
+                                    <div className="text-sm text-[#52525B]">
+                                        Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, analytics.pagination.total)} of {analytics.pagination.total} replies
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            disabled={currentPage === 1}
+                                            className={cn(
+                                                "p-2 rounded-lg border transition-colors",
+                                                currentPage === 1
+                                                    ? "border-white/5 text-[#52525B] cursor-not-allowed"
+                                                    : "border-white/10 text-white hover:bg-white/5"
+                                            )}
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                        <span className="text-sm text-[#A1A1AA] px-3">
+                                            Page {currentPage} of {analytics.pagination.pages}
+                                        </span>
+                                        <button
+                                            onClick={() => setCurrentPage(p => Math.min(analytics.pagination.pages, p + 1))}
+                                            disabled={currentPage === analytics.pagination.pages}
+                                            className={cn(
+                                                "p-2 rounded-lg border transition-colors",
+                                                currentPage === analytics.pagination.pages
+                                                    ? "border-white/5 text-[#52525B] cursor-not-allowed"
+                                                    : "border-white/10 text-white hover:bg-white/5"
+                                            )}
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="text-center py-12 text-[#52525B]">

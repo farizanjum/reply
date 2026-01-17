@@ -25,7 +25,11 @@ async def get_quota_manager():
 
 
 @router.get("/")
-async def get_analytics(authorization: str = Header(None)):
+async def get_analytics(
+    authorization: str = Header(None),
+    page: int = 1,
+    limit: int = 10
+):
     """Get analytics dashboard data - USER-SPECIFIC, not global"""
     user = await get_current_user_from_header(authorization)
     user_id = str(user['id'])
@@ -51,11 +55,12 @@ async def get_analytics(authorization: str = Header(None)):
     # Get quota history for chart
     quota_history = await quota_mgr.get_user_quota_history(user_id, days=7)
     
-    # Get recent replies (using the db abstraction)
-    recent_replies = await get_recent_replies(user['id'], limit=50)
+    # Get recent replies with pagination
+    offset = (page - 1) * limit
+    recent_replies_data = await get_recent_replies(user['id'], limit=limit, offset=offset)
     
     # Serialize datetime objects for JSON response
-    for reply in recent_replies:
+    for reply in recent_replies_data.get('replies', []):
         for key, value in reply.items():
             if hasattr(value, 'isoformat'):
                 reply[key] = value.isoformat()
@@ -94,7 +99,13 @@ async def get_analytics(authorization: str = Header(None)):
         "quota_remaining": user_quota_remaining,  # Remaining quota units
         "quota_history": quota_history,  # Last 7 days breakdown
         "quota_reset_at": quota_reset_at,  # Next reset time (midnight PT)
-        "recent_replies": recent_replies
+        "recent_replies": recent_replies_data.get('replies', []),
+        "pagination": {
+            "page": recent_replies_data.get('page', 1),
+            "pages": recent_replies_data.get('pages', 1),
+            "total": recent_replies_data.get('total', 0),
+            "limit": recent_replies_data.get('limit', limit)
+        }
     }
 
 
@@ -116,37 +127,62 @@ async def get_chart_data_endpoint(
     # Calculate comparison with previous period (only for non-all-time)
     comparison = None
     if include_comparison and days > 0:
-        # Get previous period data
-        previous_data = await db_get_chart_data(
+        from datetime import datetime, timedelta
+        
+        # Get data for double the period to compare current vs previous
+        all_data = await db_get_chart_data(
             user['id'], 
-            days=days * 2  # Get double the range, we'll slice
+            days=days * 2  # Get double the range
         )
         
-        # Sum current period
-        current_total = sum(item.get('count', 0) for item in chart_data)
+        # Calculate cutoff date for current period
+        cutoff_date = (datetime.now() - timedelta(days=days)).date()
         
-        # Previous period is the older half of the data
-        if len(previous_data) > len(chart_data):
-            previous_items = previous_data[len(chart_data):]
-            previous_total = sum(item.get('count', 0) for item in previous_items)
+        # Split data by date range
+        current_items = []
+        previous_items = []
+        
+        for item in all_data:
+            item_date = item.get('date')
+            # Handle both date objects and strings
+            if isinstance(item_date, str):
+                item_date = datetime.fromisoformat(item_date).date()
+            elif hasattr(item_date, 'date'):
+                item_date = item_date.date() if callable(getattr(item_date, 'date', None)) else item_date
             
-            # Calculate percentage change
-            if previous_total > 0:
-                change_percent = int(((current_total - previous_total) / previous_total) * 100)
-                comparison = {
-                    "current_total": current_total,
-                    "previous_total": previous_total,
-                    "change_percent": change_percent,
-                    "trend": "up" if change_percent > 0 else "down" if change_percent < 0 else "flat"
-                }
-            elif current_total > 0:
-                # No previous data but have current data
-                comparison = {
-                    "current_total": current_total,
-                    "previous_total": 0,
-                    "change_percent": 100,
-                    "trend": "up"
-                }
+            if item_date and item_date >= cutoff_date:
+                current_items.append(item)
+            else:
+                previous_items.append(item)
+        
+        current_total = sum(item.get('count', 0) for item in current_items)
+        previous_total = sum(item.get('count', 0) for item in previous_items)
+        
+        # Calculate percentage change
+        if previous_total > 0:
+            change_percent = int(((current_total - previous_total) / previous_total) * 100)
+            comparison = {
+                "current_total": current_total,
+                "previous_total": previous_total,
+                "change_percent": change_percent,
+                "trend": "up" if change_percent > 0 else "down" if change_percent < 0 else "flat"
+            }
+        elif current_total > 0:
+            # No previous data but have current data - show as new/100% growth
+            comparison = {
+                "current_total": current_total,
+                "previous_total": 0,
+                "change_percent": 100,
+                "trend": "up"
+            }
+        else:
+            # No data at all
+            comparison = {
+                "current_total": 0,
+                "previous_total": 0,
+                "change_percent": 0,
+                "trend": "flat"
+            }
     
     # Serialize date objects
     for item in chart_data:

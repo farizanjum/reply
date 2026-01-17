@@ -78,10 +78,7 @@ export default function SettingsPage() {
     const fetchNotificationPreferences = async () => {
         setLoadingNotifications(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications/preferences`, {
-                headers: {
-                    'Authorization': `Bearer ${document.cookie.split('better-auth.session_token=')[1]?.split(';')[0] || ''}`
-                },
+            const response = await fetch('/api/notifications/preferences', {
                 credentials: 'include'
             });
             if (response.ok) {
@@ -100,11 +97,10 @@ export default function SettingsPage() {
     const updateNotificationPreferences = async (key: 'notify_quota_warnings' | 'notify_errors', value: boolean) => {
         setSavingNotifications(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notifications/preferences`, {
+            const response = await fetch('/api/notifications/preferences', {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${document.cookie.split('better-auth.session_token=')[1]?.split(';')[0] || ''}`
+                    'Content-Type': 'application/json'
                 },
                 credentials: 'include',
                 body: JSON.stringify({ [key]: value })

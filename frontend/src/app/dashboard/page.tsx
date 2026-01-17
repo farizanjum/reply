@@ -52,6 +52,20 @@ export default function DashboardPage() {
         staleTime: 60 * 1000, // Cache for 1 minute
     });
 
+    // Fetch chart data for comparison metrics
+    const { data: chartResponse } = useQuery({
+        queryKey: ['dashboard-comparison'],
+        queryFn: async () => {
+            const response = await fetch('/api/youtube/analytics/chart?days=7');
+            if (!response.ok) return null;
+            return response.json();
+        },
+        staleTime: 60 * 1000,
+    });
+
+    // Extract comparison data
+    const comparison = chartResponse?.comparison;
+
     const videos = videosData?.videos || [];
 
     const stats = [
@@ -59,8 +73,8 @@ export default function DashboardPage() {
             name: 'Total Replies',
             value: analytics?.total_replies || 0,
             icon: MessageSquare,
-            change: '+12%',
-            trend: 'up'
+            change: comparison?.change_percent,
+            trend: comparison?.trend
         },
         {
             name: 'Active Videos',
@@ -78,8 +92,8 @@ export default function DashboardPage() {
             name: 'Replies Today',
             value: analytics?.replies_today || 0,
             icon: TrendingUp,
-            change: '+8%',
-            trend: 'up'
+            change: comparison?.change_percent,
+            trend: comparison?.trend
         },
     ];
 
@@ -193,13 +207,13 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="mt-2 h-4 flex items-center">
-                            {stat.change && (
+                            {stat.change !== undefined && stat.trend && (
                                 <span className={cn(
                                     "text-xs font-medium flex items-center gap-1",
-                                    stat.trend === 'up' ? "text-emerald-400" : "text-rose-400"
+                                    stat.trend === 'up' ? "text-emerald-400" : stat.trend === 'down' ? "text-rose-400" : "text-[#52525B]"
                                 )}>
                                     {stat.trend === 'up' && <ArrowUpRight className="w-3 h-3" />}
-                                    {stat.change}
+                                    {stat.change > 0 ? '+' : ''}{stat.change}%
                                     <span className="text-[#52525B] font-normal">vs last week</span>
                                 </span>
                             )}

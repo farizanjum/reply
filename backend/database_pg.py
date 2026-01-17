@@ -777,20 +777,36 @@ async def get_reply_stats(user_id: int, days: int = 7) -> Dict:
         return dict(row) if row else {}
 
 
-async def get_recent_replies(user_id: int, limit: int = 50) -> List[Dict]:
-    """Get recent replies with video info"""
+async def get_recent_replies(user_id: int, limit: int = 10, offset: int = 0) -> Dict:
+    """Get recent replies with video info and pagination"""
     # Ensure user_id is int for asyncpg
     user_id = int(user_id) if isinstance(user_id, str) else user_id
     async with pool.acquire() as conn:
+        # Get total count for pagination
+        total = await conn.fetchval(
+            "SELECT COUNT(*) FROM replied_comments WHERE user_id = $1",
+            user_id
+        )
+        
+        # Get paginated results
         rows = await conn.fetch("""
             SELECT rc.*, v.title as video_title
             FROM replied_comments rc
             LEFT JOIN videos v ON rc.video_id = v.video_id
             WHERE rc.user_id = $1
             ORDER BY rc.replied_at DESC
-            LIMIT $2
-        """, user_id, limit)
-        return [dict(row) for row in rows]
+            LIMIT $2 OFFSET $3
+        """, user_id, limit, offset)
+        
+        replies = [dict(row) for row in rows]
+        
+        return {
+            "replies": replies,
+            "total": total,
+            "page": (offset // limit) + 1,
+            "pages": (total + limit - 1) // limit if total > 0 else 1,
+            "limit": limit
+        }
 
 
 async def get_chart_data(user_id: int, days: int = 7) -> List[Dict]:

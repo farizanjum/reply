@@ -33,12 +33,17 @@ export async function GET(request: NextRequest) {
             );
         }
 
+        // Get pagination params
+        const { searchParams } = new URL(request.url);
+        const page = searchParams.get('page') || '1';
+        const limit = searchParams.get('limit') || '10';
+
         // Get backend token for auth
         const backendToken = await getBackendToken(session.user);
 
-        // Fetch real analytics from backend
+        // Fetch real analytics from backend with pagination
         const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-        const response = await fetch(`${BACKEND_URL}/api/analytics/`, {
+        const response = await fetch(`${BACKEND_URL}/api/analytics/?page=${page}&limit=${limit}`, {
             headers: {
                 'Authorization': `Bearer ${backendToken}`
             }
