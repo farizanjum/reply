@@ -1,0 +1,92 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: /docker/reply-backend
+        awslogs-stream: caddy
+        awslogs-create-group: "true"
+
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    depends_on:
+      - redis
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: /docker/reply-backend
+        awslogs-stream: web
+        awslogs-create-group: "true"
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: celery -A worker.celery_app worker --loglevel=info --concurrency=4 --pool=solo
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    depends_on:
+      - redis
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: /docker/reply-backend
+        awslogs-stream: worker
+        awslogs-create-group: "true"
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: celery -A worker.celery_app beat -S redbeat.RedBeatScheduler --loglevel=info
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    depends_on:
+      - redis
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: /docker/reply-backend
+        awslogs-stream: beat
+        awslogs-create-group: "true"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: /docker/reply-backend
+        awslogs-stream: redis
+        awslogs-create-group: "true"
+
+volumes:
+  caddy_data:
+  caddy_config:
+  redis_data:
