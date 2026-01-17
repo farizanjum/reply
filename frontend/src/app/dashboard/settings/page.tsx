@@ -831,7 +831,7 @@ export default function SettingsPage() {
                                     className={`relative w-12 h-6 rounded-full transition-colors ${notifyQuotaWarnings ? 'bg-orange-500' : 'bg-white/10'
                                         }`}
                                 >
-                                    <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${notifyQuotaWarnings ? 'translate-x-6' : 'translate-x-0.5'
+                                    <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-200 ${notifyQuotaWarnings ? 'left-[26px]' : 'left-0.5'
                                         }`} />
                                 </button>
                             </div>
@@ -852,7 +852,7 @@ export default function SettingsPage() {
                                     className={`relative w-12 h-6 rounded-full transition-colors ${notifyErrors ? 'bg-orange-500' : 'bg-white/10'
                                         }`}
                                 >
-                                    <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${notifyErrors ? 'translate-x-6' : 'translate-x-0.5'
+                                    <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-200 ${notifyErrors ? 'left-[26px]' : 'left-0.5'
                                         }`} />
                                 </button>
                             </div>

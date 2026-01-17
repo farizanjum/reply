@@ -63,6 +63,48 @@ export default function DashboardPage() {
         staleTime: 60 * 1000,
     });
 
+    // Fetch system health status - polls every 30s
+    const { data: healthData } = useQuery({
+        queryKey: ['system-health'],
+        queryFn: async () => {
+            const response = await fetch('/api/health');
+            if (!response.ok) return { status: 'down' };
+            return response.json();
+        },
+        refetchInterval: 30000, // Poll every 30s
+        staleTime: 10000, // Consider stale after 10s
+    });
+
+    // System status config
+    const systemStatus = healthData?.status || 'healthy';
+    const statusConfig = {
+        healthy: {
+            label: 'System Operational',
+            bgColor: 'bg-green-500/10',
+            textColor: 'text-green-400',
+            borderColor: 'border-green-500/20',
+            dotColor: 'bg-green-500',
+            glowColor: 'rgba(34,197,94,0.5)'
+        },
+        degraded: {
+            label: 'System Degraded',
+            bgColor: 'bg-yellow-500/10',
+            textColor: 'text-yellow-400',
+            borderColor: 'border-yellow-500/20',
+            dotColor: 'bg-yellow-500',
+            glowColor: 'rgba(234,179,8,0.5)'
+        },
+        down: {
+            label: 'System Down',
+            bgColor: 'bg-red-500/10',
+            textColor: 'text-red-400',
+            borderColor: 'border-red-500/20',
+            dotColor: 'bg-red-500',
+            glowColor: 'rgba(239,68,68,0.5)'
+        }
+    };
+    const currentStatus = statusConfig[systemStatus as keyof typeof statusConfig] || statusConfig.healthy;
+
     // Extract comparison data
     const comparison = chartResponse?.comparison;
 
@@ -164,9 +206,9 @@ export default function DashboardPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="px-2.5 py-1 text-xs font-medium bg-green-500/10 text-green-400 rounded-full border border-green-500/20 flex items-center gap-1.5 h-8">
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-                        System Operational
+                    <span className={`px-2.5 py-1 text-xs font-medium ${currentStatus.bgColor} ${currentStatus.textColor} rounded-full border ${currentStatus.borderColor} flex items-center gap-1.5 h-8`}>
+                        <span className={`w-1.5 h-1.5 ${currentStatus.dotColor} rounded-full animate-pulse`} style={{ boxShadow: `0 0 8px ${currentStatus.glowColor}` }} />
+                        {currentStatus.label}
                     </span>
                     <Link
                         href="/dashboard/videos"
