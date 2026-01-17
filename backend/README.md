@@ -1,10 +1,10 @@
-# 🚀 YouTube Auto-Reply API - High Performance Edition
+# 🚀 YouTube Auto-Reply API
 
-**A production-ready system that handles 5,000+ concurrent users and processes 10,000+ comments per video.**
+**Production-ready backend that handles 5,000+ concurrent users and processes 10,000+ comments per video.**
 
 ## 🎯 Quick Start
 
-### Local Development (SQLite)
+### Local Development
 
 ```bash
 # Install dependencies
@@ -12,38 +12,39 @@ pip install -r requirements.txt
 
 # Run server
 uvicorn main:app --reload
-
-# The app automatically uses SQLite locally
 ```
 
-### Production Mode (PostgreSQL + Redis + Celery)
+### Production (AWS EC2 + Docker)
 
 ```bash
-# Set environment variables
-export DATABASE_URL="postgresql://..."
-export REDIS_URL="redis://..."
+# Deploy with Docker Compose
+sudo docker-compose -f docker-compose.prod.yml up -d
 
-# Run API server
-gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
-
-# Run Celery worker (in another terminal)
-celery -A worker.celery_app worker --loglevel=info
+# View logs
+sudo docker-compose -f docker-compose.prod.yml logs --tail=100
 ```
 
-### Deploy to Heroku (One Command)
+## 📚 Environment Variables
 
-```bash
-# Windows
-deploy.bat
+```env
+# Database (AWS RDS)
+DATABASE_URL=postgresql://postgres:password@your-rds-endpoint:5432/youtube_autoreply
 
-# Linux/Mac
-bash deploy.sh
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# OAuth
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+YOUTUBE_API_KEY=your-api-key
+
+# Security
+SECRET_KEY=your-32-char-secret-key
+
+# URLs
+FRONTEND_URL=https://tryreply.app
+REDIRECT_URI=https://tryreply.app/auth/callback/youtube
 ```
-
-## 📚 Documentation
-
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - What we built
 
 ## 🔥 Key Features
 
@@ -51,18 +52,8 @@ bash deploy.sh
 ✅ **Redis Caching** - Sub-millisecond responses  
 ✅ **Celery Background Workers** - Process 1000s of comments  
 ✅ **WebSocket Support** - Real-time progress updates  
-✅ **Load Testing** - Locust scripts included  
-✅ **Auto-scaling** - Horizontal scaling on Heroku  
-
-## 🧪 Testing
-
-```bash
-# Performance tests
-pytest tests/test_performance.py -v
-
-# Load test (simulate 1000 users)
-locust -f tests/load_test.py --host=http://localhost:8000 --users=1000
-```
+✅ **Health Monitoring** - `/health` endpoint  
+✅ **Docker Deployment** - Simple container orchestration
 
 ## 📊 Performance
 
@@ -70,68 +61,70 @@ locust -f tests/load_test.py --host=http://localhost:8000 --users=1000
 |--------|-------|
 | Concurrent Users | 5,000+ |
 | Comments/Video | 10,000+ |
-| API Response | <200ms  |
+| API Response | <200ms |
 | Reply Throughput | 1000/min |
 
 ## 🛠️ Tech Stack
 
 - FastAPI + Uvicorn + Gunicorn
-- PostgreSQL (asyncpg)
+- PostgreSQL (asyncpg) on AWS RDS
 - Redis (caching + queue)
 - Celery (background jobs)
-- WebSocket (real-time)
-- Locust (load testing)
+- Docker + Caddy (HTTPS)
 
-## 📖 API Examples
+## 📖 API Endpoints
 
-### Trigger Auto-Reply (Background)
+### Health Check
+```bash
+GET /health
+# Returns: {"status":"healthy","postgres":true,"redis":true}
+```
+
+### Trigger Auto-Reply
 ```bash
 POST /api/videos/{video_id}/trigger-reply
 
 Response:
 {
   "status": "processing",
-  "task_id": "abc123...",
-  "websocket_url": "/ws/123"
+  "task_id": "abc123..."
 }
 ```
 
-### Check Task Status
+### Analytics
 ```bash
-GET /api/videos/tasks/{task_id}/status
-
-Response:
-{
-  "status": "completed",
-  "result": {
-    "succeeded": 187,
-    "failed": 0
-  }
-}
+GET /api/analytics/
+# User-specific analytics with quota and reply stats
 ```
 
-### Real-Time Updates
-```javascript
-const ws = new WebSocket('ws://localhost:8000/ws/123');
-ws.onmessage = (event) => {
-  console.log('Progress:', JSON.parse(event.data));
-};
-```
-
-## 🚀 Scaling
+## 🚀 Deployment Commands
 
 ```bash
-# Scale to handle 5,000 users
-heroku ps:scale web=3 worker=2
-heroku addons:upgrade heroku-postgresql:standard-0
-heroku addons:upgrade heroku-redis:premium-0
+# Build and start
+sudo docker-compose -f docker-compose.prod.yml build
+sudo docker-compose -f docker-compose.prod.yml up -d
+
+# Restart web service
+sudo docker-compose -f docker-compose.prod.yml restart web
+
+# View logs
+sudo docker-compose -f docker-compose.prod.yml logs -f web
+
+# Stop all
+sudo docker-compose -f docker-compose.prod.yml down
 ```
 
-## 📞 Support
+## 📞 Troubleshooting
 
-Check logs:
 ```bash
-heroku logs --tail -a youtube-autoreply-api
+# Check container status
+sudo docker-compose -f docker-compose.prod.yml ps
+
+# View recent logs
+sudo docker-compose -f docker-compose.prod.yml logs --tail=50 web
+
+# Connect to database
+psql -h your-rds-endpoint -U postgres -d youtube_autoreply
 ```
 
 ## 📄 License

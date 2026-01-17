@@ -2,6 +2,8 @@
 
 A fully automated system that monitors your YouTube videos 24/7 and replies to comments based on keywords with human-like behavior.
 
+**Live at:** [tryreply.app](https://tryreply.app)
+
 ## What It Does
 
 - Monitors your YouTube channel videos automatically
@@ -10,7 +12,7 @@ A fully automated system that monitors your YouTube videos 24/7 and replies to c
 - Prevents duplicate replies with sub-millisecond database checks
 - Uses human-like delays to avoid YouTube ban
 - Tracks quota usage (10,000 units/day limit)
-- Provides analytics dashboard
+- Provides analytics dashboard with real-time system health
 
 ## Architecture
 
@@ -24,41 +26,40 @@ A fully automated system that monitors your YouTube videos 24/7 and replies to c
          | HTTPS/REST
          v
 +------------------+
-|   FastAPI        |  Backend (Heroku)
+|   FastAPI        |  Backend (AWS EC2)
 |   Backend        |  - OAuth authentication
-|   (Heroku)       |  - YouTube API integration
+|   (Docker)       |  - YouTube API integration
 +--------+---------+  - Auto-reply engine
          |
     +----+----+----------+----------+
     |         |          |          |
     v         v          v          v
 +--------+ +------+ +--------+ +---------+
-|Postgres| |Redis | |YouTube | |Scheduler|
-|  (DB)  | |(Cache)| |  API   | | (Cron) |
+|  RDS   | |Redis | |YouTube | | Celery  |
+|Postgres| |(Docker)| |  API   | | Worker |
 +--------+ +------+ +--------+ +---------+
 ```
 
-## Cost Breakdown
+## Infrastructure
 
-| Service | Plan | Cost/Month |
+| Service | Spec | Cost/Month |
 |---------|------|------------|
-| Heroku Eco Dyno | Eco | $5 |
-| PostgreSQL | Mini | $5 |
-| Redis | Mini | $3 |
-| Heroku Scheduler | Standard | FREE |
-| Vercel (Frontend) | Hobby | FREE |
-| **TOTAL** | | **$13/month** |
+| AWS EC2 | t3.small (Ubuntu) | ~$15 |
+| AWS RDS | PostgreSQL db.t3.micro | ~$13 |
+| Elastic IP | 1 (attached) | FREE |
+| Vercel | Hobby tier | FREE |
+| **TOTAL** | | **~$28/month** |
 
 ## Quick Start
 
 ### 1. Clone Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/farizanjum/reply.git
 cd reply-comments
 ```
 
-### 2. Backend Setup
+### 2. Backend Setup (Local)
 
 ```bash
 cd backend
@@ -78,25 +79,22 @@ cp .env.example .env
 uvicorn main:app --reload
 ```
 
-### 3. Deploy to Heroku
+### 3. Deploy to AWS EC2
 
-See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for complete instructions.
-
-Quick deploy:
 ```bash
-heroku create youtube-autoreply-api
-heroku addons:create heroku-postgresql:mini
-heroku addons:create heroku-redis:mini
-heroku addons:create scheduler:standard
+# SSH into your EC2 instance
+ssh -i your-key.pem ubuntu@your-ec2-ip
 
-# Set environment variables
-heroku config:set GOOGLE_CLIENT_ID="your-id"
-heroku config:set GOOGLE_CLIENT_SECRET="your-secret"
-heroku config:set YOUTUBE_API_KEY="your-key"
-heroku config:set SECRET_KEY="$(openssl rand -hex 32)"
+# Clone and deploy
+git clone https://github.com/farizanjum/reply.git app
+cd app
 
-# Deploy
-git push heroku main
+# Configure environment
+cp backend/.env.example backend/.env.prod
+# Edit .env.prod with production credentials
+
+# Deploy with Docker Compose
+sudo docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ### 4. Frontend Setup
@@ -106,6 +104,8 @@ cd frontend
 npm install
 npm run dev
 ```
+
+Deploy to Vercel by connecting your GitHub repository.
 
 ## Features
 
@@ -121,6 +121,8 @@ npm run dev
 - [x] Text variation
 - [x] Quota management
 - [x] Analytics dashboard
+- [x] Real-time system health monitoring
+- [x] Notification preferences (email alerts)
 
 ### Anti-Ban Strategy
 
@@ -165,16 +167,21 @@ Each video can be configured with:
 
 ### Environment Variables
 
-Required variables:
-
-- `DATABASE_URL` - PostgreSQL connection
+**Backend:**
+- `DATABASE_URL` - PostgreSQL connection (AWS RDS)
 - `REDIS_URL` - Redis connection
 - `GOOGLE_CLIENT_ID` - OAuth client ID
 - `GOOGLE_CLIENT_SECRET` - OAuth secret
 - `YOUTUBE_API_KEY` - YouTube API key
 - `SECRET_KEY` - JWT secret
-- `FRONTEND_URL` - Frontend URL
+- `FRONTEND_URL` - Frontend URL (https://tryreply.app)
 - `REDIRECT_URI` - OAuth redirect
+
+**Frontend:**
+- `DATABASE_URL` - Prisma database URL
+- `NEXT_PUBLIC_BACKEND_URL` - Backend API URL
+- `BETTER_AUTH_SECRET` - Auth secret
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` - OAuth credentials
 
 ## Performance Metrics
 
@@ -182,7 +189,7 @@ Required variables:
 - **Batch Check**: 2-5ms for 100 comments
 - **Reply Speed**: 100 comments in ~3 minutes
 - **Daily Capacity**: 150-180 replies/day (within quota)
-- **Uptime**: 99.9% (Heroku SLA)
+- **Uptime**: 99.9% (AWS SLA)
 
 ## Project Structure
 
@@ -191,25 +198,15 @@ reply-comments/
 ├── backend/                 # FastAPI backend
 │   ├── main.py             # App entry point
 │   ├── config.py           # Configuration
-│   ├── database.py         # Database functions
-│   ├── schema.sql          # Database schema
+│   ├── database_pg.py      # PostgreSQL functions
 │   ├── routers/            # API routes
-│   │   ├── auth.py         # Authentication
-│   │   ├── videos.py       # Video management
-│   │   └── analytics.py    # Analytics
 │   ├── services/           # Business logic
-│   │   ├── youtube_client.py
-│   │   ├── reply_engine.py
-│   │   └── quota_manager.py
-│   ├── utils/              # Utilities
-│   │   ├── human_delays.py
-│   │   └── text_variation.py
-│   ├── middleware/         # Middleware
-│   │   └── auth_middleware.py
-│   └── scripts/            # Background jobs
-│       └── auto_reply_job.py
+│   ├── middleware/         # Auth middleware
+│   └── docker-compose.prod.yml
 ├── frontend/               # Next.js frontend
-├── DEPLOYMENT_GUIDE.md     # Deployment instructions
+│   ├── src/app/           # App Router pages
+│   ├── src/components/    # React components
+│   └── src/lib/           # Utilities
 └── README.md               # This file
 ```
 
@@ -218,7 +215,7 @@ reply-comments/
 - OAuth 2.0 authentication
 - JWT token-based sessions
 - Environment variable secrets
-- HTTPS only in production
+- HTTPS only (Caddy reverse proxy)
 - CORS protection
 - SQL injection prevention (parameterized queries)
 
@@ -227,30 +224,28 @@ reply-comments/
 ### View Logs
 
 ```bash
-heroku logs --tail
+# SSH into EC2
+ssh -i your-key.pem ubuntu@your-ec2-ip
+
+# View all container logs
+sudo docker-compose -f docker-compose.prod.yml logs --tail=100
+
+# View specific service
+sudo docker-compose -f docker-compose.prod.yml logs web --tail=50
 ```
 
-### Database Status
+### Health Check
 
 ```bash
-heroku pg:info
-heroku pg:psql
+curl https://your-api-url/health
+# Returns: {"status":"healthy","postgres":true,"redis":true}
 ```
 
-### Redis Status
+### Database
 
 ```bash
-heroku redis:info
-heroku redis:cli
-```
-
-### Quota Usage
-
-Check via analytics dashboard or:
-
-```bash
-heroku redis:cli
-> GET quota:daily
+# Connect to RDS PostgreSQL
+psql -h your-rds-endpoint -U postgres -d youtube_autoreply
 ```
 
 ## Troubleshooting
@@ -262,44 +257,49 @@ heroku redis:cli
    - Check client ID and secret
 
 2. **Database Connection Error**
-   - Verify DATABASE_URL is set
-   - Check Heroku Postgres status
+   - Verify DATABASE_URL in .env.prod
+   - Check RDS security group allows EC2 access
 
 3. **Quota Exhausted**
    - Check daily usage in analytics
    - Wait for midnight PT reset
 
-4. **Scheduler Not Running**
-   - Verify job configuration
-   - Check Heroku Scheduler dashboard
+4. **Container Not Starting**
+   - Check logs: `docker-compose logs web`
+   - Verify environment variables
 
-## Documentation
+## v3.0 Roadmap
 
-- [Backend README](./backend/README.md)
-- [Deployment Guide](./DEPLOYMENT_GUIDE.md)
-- [API Documentation](https://youtube-autoreply-api.herokuapp.com/docs)
+### Planned Features
 
-## Development
+**1. AI Video Analysis**
+- Automatically analyze video content
+- Smart link recommendations based on context
+- Auto-insert relevant links in replies
 
-### Run Tests
+**2. Instagram DM Auto-Reply**
+- Automated responses to Instagram DMs
+- Keyword-based filtering
+- Template-based personalized replies
+- Analytics and engagement tracking
 
-```bash
-cd backend
-pytest tests/ -v
-```
+**3. One-Click Instagram Connect**
+- Seamless Instagram Business account connection
+- Facebook OAuth integration
+- Real-time DM webhook notifications
 
-### Code Quality
+**4. Google OAuth Verification**
+- Complete app verification for production
+- Remove "unverified app" warning
 
-```bash
-# Format code
-black .
+### Timeline (Estimated)
 
-# Lint
-flake8 .
-
-# Type checking
-mypy .
-```
+| Phase | Features | Duration |
+|-------|----------|----------|
+| Phase 1 | AI Video Analysis | 3 weeks |
+| Phase 2 | Instagram Connect | 2 weeks |
+| Phase 3 | Instagram DM Auto-Reply | 2 weeks |
+| Phase 4 | Testing & Polish | 1 week |
 
 ## License
 
@@ -313,50 +313,6 @@ MIT License - see LICENSE file
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
 
-## Support
-
-For issues or questions:
-1. Check documentation
-2. Review logs
-3. Open GitHub issue
-
-## v3.0 Roadmap
-
-### Planned Features
-
-**1. Instagram DM Auto-Reply**
-- Automated responses to Instagram DMs based on keywords
-- Similar to existing YouTube functionality
-- Template-based personalized replies
-- Analytics and engagement tracking
-
-**2. One-Click Instagram Connect**
-- Seamless Instagram Business account connection via Facebook OAuth
-- Webhook integration for real-time DM notifications
-- Automatic permission handling
-
-**3. Google OAuth Verification**
-- Complete Google OAuth app verification for production deployment
-- Domain verification and security assessment
-- Removal of "unverified app" warning screen
-
-### Timeline (Estimated)
-
-| Phase | Features | Duration |
-|-------|----------|----------|
-| Phase 1 | Google OAuth Verification | 2-4 weeks |
-| Phase 2 | Instagram Connect Backend | 2 weeks |
-| Phase 3 | Instagram DM Auto-Reply | 2 weeks |
-| Phase 4 | UI/UX Polish & Testing | 1 week |
-
-## Acknowledgments
-
-- FastAPI for the amazing framework
-- Heroku for reliable hosting
-- Google for YouTube API
-- All contributors
-
 ---
 
-**Built with love for YouTube creators**
-
+**Built with ❤️ for YouTube creators**

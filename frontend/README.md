@@ -1,18 +1,21 @@
-# Reply Comments - Frontend
+# Reply - Frontend
 
-Next.js 16 frontend for the YouTube Comment Auto-Reply system with account delegation.
+Next.js 15 frontend for the YouTube Comment Auto-Reply system.
+
+**Live at:** [tryreply.app](https://tryreply.app)
 
 ## Features
 
-- 🔐 **Better Auth** - Google OAuth + custom delegation login
-- 👥 **Account Delegation** - Share access without sharing OAuth credentials
+- 🔐 **Better Auth** - Google OAuth + delegation login
+- 👥 **Account Delegation** - Share access without sharing credentials
 - 📹 **Video Management** - Configure auto-reply per video
 - 📊 **Analytics Dashboard** - Track replies and quota usage
+- 🟢 **System Health** - Real-time backend status monitoring
 - 🎨 **Modern UI** - Tailwind CSS with dark mode
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Auth**: Better Auth + Prisma
 - **Styling**: Tailwind CSS
 - **Database**: PostgreSQL (Prisma ORM)
@@ -24,7 +27,7 @@ Next.js 16 frontend for the YouTube Comment Auto-Reply system with account deleg
 # Install dependencies
 npm install
 
-# Set up environment variables
+# Set up environment
 cp .env.example .env
 
 # Generate Prisma client
@@ -37,23 +40,25 @@ npm run dev
 ## Environment Variables
 
 ```env
-# Database
-DATABASE_URL=postgresql://...
+# Database (Prisma Accelerate recommended for Vercel)
+DATABASE_URL=prisma://accelerate.prisma-data.net/?api_key=...
 
 # Better Auth
 BETTER_AUTH_SECRET=your-secret
-BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_URL=https://tryreply.app
 
 # Google OAuth
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
 
-# Backend API
-NEXT_PUBLIC_API_URL=http://localhost:8000
-BACKEND_SECRET_KEY=...
+# Backend API (AWS EC2)
+NEXT_PUBLIC_BACKEND_URL=https://your-ec2-ip.nip.io
+
+# JWT Secret (must match backend)
+SECRET_KEY=your-32-char-secret
 
 # Email (Unosend)
-UNOSEND_API_KEY=...
+UNOSEND_API_KEY=your-api-key
 ```
 
 ## Project Structure
@@ -64,48 +69,33 @@ src/
 │   ├── api/               # API routes
 │   │   ├── auth/         # Auth endpoints
 │   │   ├── youtube/      # YouTube API proxy
-│   │   └── sync/         # Token sync
+│   │   ├── health/       # System health check
+│   │   └── notifications/ # Notification preferences
 │   ├── auth/             # Auth pages
 │   └── dashboard/        # Dashboard pages
 ├── components/           # React components
-│   ├── ui/              # Base UI components
-│   └── layout/          # Layout components
-├── lib/                  # Utilities
-│   ├── auth.ts          # Better Auth config
-│   ├── auth-client.ts   # Client-side auth
-│   └── google-token.ts  # Token refresh
-└── store/               # State management
+│   └── ui/              # Base UI components
+└── lib/                  # Utilities
+    ├── auth.ts          # Better Auth config
+    └── api.ts           # API client
 ```
-
-## Account Delegation
-
-Allows account owners to share access with managers:
-
-1. Owner sets delegation password in Settings
-2. Manager logs in with owner's email + delegation password
-3. Manager has restricted access (no settings)
-4. Sessions expire in 24 hours
-5. All logins are audit logged
 
 ## Deployment
 
 Deploy to Vercel:
 
-```bash
-# Build for production
-npm run build
-
-# Or push to GitHub and import to Vercel
-```
+1. Connect GitHub repository to Vercel
+2. Add environment variables in Vercel dashboard
+3. Deploy
 
 Required Vercel environment variables:
-- `DATABASE_URL`
+- `DATABASE_URL` (Prisma Accelerate URL)
 - `BETTER_AUTH_SECRET`
 - `BETTER_AUTH_URL`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
-- `NEXT_PUBLIC_API_URL`
-- `BACKEND_SECRET_KEY`
+- `NEXT_PUBLIC_BACKEND_URL`
+- `SECRET_KEY`
 
 ## License
 
