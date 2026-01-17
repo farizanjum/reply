@@ -16,3 +16,7 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+
+# Sensitive files
+*.pem
+*.dump
