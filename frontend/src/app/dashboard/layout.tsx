@@ -202,7 +202,7 @@ function DashboardLayoutInner({
 
                                 {/* Copyright + Trademark */}
                                 <div className="flex flex-wrap items-center justify-center gap-x-3 text-[10px] text-[#52525B]">
-                                    <span>© 2026 Reply. All rights reserved.</span>
+                                    <span>© 2026 reply. (Fariz Anjum). All rights reserved.</span>
                                     <span className="w-px h-2.5 bg-[#3f3f46]" />
                                     <span>YouTube is a trademark of Google LLC.</span>
                                 </div>

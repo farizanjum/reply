@@ -204,7 +204,7 @@ export function generateEmailHtml(title: string, content: string) {
     ${content}
     <div class="footer">
       <p class="footer-text">
-        © ${new Date().getFullYear()} reply. All rights reserved.<br/>
+        © ${new Date().getFullYear()} reply. (Fariz Anjum). All rights reserved.<br/>
         Automate your YouTube engagement with ease.
       </p>
       <p class="footer-brand">

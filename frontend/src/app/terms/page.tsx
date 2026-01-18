@@ -24,24 +24,24 @@ export default function TermsPage() {
             <main className="relative z-10 max-w-4xl mx-auto px-6 py-16">
                 <div className="mb-12">
                     <h1 className="text-4xl sm:text-5xl font-bold mb-4 tracking-tight">Terms of Service</h1>
-                    <p className="text-[#A1A1AA]">Last updated: January 1, 2026</p>
+                    <p className="text-[#A1A1AA]">Last updated: January 18, 2026</p>
                 </div>
 
                 <div className="prose prose-invert prose-lg max-w-none space-y-8">
                     <section className="space-y-4">
                         <h2 className="text-2xl font-semibold text-white border-b border-white/10 pb-2">1. Acceptance of Terms</h2>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            Welcome to Reply. These Terms of Service ("Terms") govern your access to and use of the Reply platform, including our website, applications, and services (collectively, the "Service"). By accessing or using the Service, you agree to be bound by these Terms and our Privacy Policy.
+                            Welcome to <strong>reply.</strong> These Terms of Service (&quot;Terms&quot;) constitute a legally binding agreement between you and <strong>Fariz Anjum</strong>, a sole proprietorship operating under the brand name &quot;reply.&quot; (hereinafter referred to as &quot;reply.&quot;, &quot;Company&quot;, &quot;we&quot;, &quot;us&quot;, and &quot;our&quot;).
                         </p>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            If you are using the Service on behalf of an organization, you represent and warrant that you have the authority to bind that organization to these Terms. If you do not agree to these Terms, you may not access or use the Service.
+                            By accessing or using our website, applications, and services (collectively, the &quot;Service&quot;), you agree to be bound by these Terms and our Privacy Policy. If you are using the Service on behalf of an organization, you represent and warrant that you have the authority to bind that organization to these Terms. If you do not agree to these Terms, you may not access or use the Service.
                         </p>
                     </section>
 
                     <section className="space-y-4">
                         <h2 className="text-2xl font-semibold text-white border-b border-white/10 pb-2">2. Description of Service</h2>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            Reply is an automated comment management platform designed for YouTube content creators. The Service provides:
+                            reply. is an automated comment management platform designed for YouTube content creators. The Service provides:
                         </p>
                         <ul className="list-disc list-inside text-[#A1A1AA] space-y-2 ml-4">
                             <li>Automated reply generation based on user-defined keywords and templates</li>
@@ -86,7 +86,7 @@ export default function TermsPage() {
                         <ul className="list-disc list-inside text-[#A1A1AA] space-y-2 ml-4">
                             <li>Comply with all applicable laws, regulations, and third-party agreements</li>
                             <li>Use the Service only for lawful purposes and in accordance with these Terms</li>
-                            <li>Respect YouTube's Terms of Service and Community Guidelines</li>
+                            <li>Respect YouTube&apos;s Terms of Service and Community Guidelines</li>
                             <li>Not use the Service to send spam, misleading, or inappropriate content</li>
                             <li>Take full responsibility for the content of your automated replies</li>
                             <li>Not attempt to circumvent any security features or access restrictions</li>
@@ -105,7 +105,7 @@ export default function TermsPage() {
 
                         <h3 className="text-xl font-medium text-orange-400">5.2 Our Content</h3>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            The Service, including its original content, features, and functionality, is owned by Reply and is protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
+                            The Service, including its original content, features, and functionality, is owned by reply. (Fariz Anjum) and is protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
                         </p>
 
                         <h3 className="text-xl font-medium text-orange-400">5.3 Feedback</h3>
@@ -117,14 +117,14 @@ export default function TermsPage() {
                     <section className="space-y-4">
                         <h2 className="text-2xl font-semibold text-white border-b border-white/10 pb-2">6. YouTube API Compliance</h2>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            Our Service uses YouTube API Services. By using Reply, you also agree to be bound by the YouTube Terms of Service: <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 underline">https://www.youtube.com/t/terms</a>
+                            Our Service uses YouTube API Services. By using reply., you also agree to be bound by the YouTube Terms of Service: <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 underline">https://www.youtube.com/t/terms</a>
                         </p>
                         <p className="text-[#A1A1AA] leading-relaxed">You acknowledge that:</p>
                         <ul className="list-disc list-inside text-[#A1A1AA] space-y-2 ml-4">
-                            <li>Reply accesses YouTube on your behalf using OAuth 2.0 authorization</li>
-                            <li>You are responsible for ensuring your use complies with YouTube's policies</li>
+                            <li>reply. accesses YouTube on your behalf using OAuth 2.0 authorization</li>
+                            <li>You are responsible for ensuring your use complies with YouTube&apos;s policies</li>
                             <li>YouTube may impose rate limits or restrictions that affect Service availability</li>
-                            <li>Changes to YouTube's API or policies may impact Service functionality</li>
+                            <li>Changes to YouTube&apos;s API or policies may impact Service functionality</li>
                         </ul>
                     </section>
 
@@ -150,7 +150,7 @@ export default function TermsPage() {
 
                         <h3 className="text-xl font-medium text-orange-400">8.1 Free and Paid Plans</h3>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            Reply may offer both free and paid subscription plans. Features, limitations, and pricing for each plan are described on our website and may change from time to time.
+                            reply. may offer both free and paid subscription plans. Features, limitations, and pricing for each plan are described on our website and may change from time to time.
                         </p>
 
                         <h3 className="text-xl font-medium text-orange-400">8.2 Billing</h3>
@@ -167,7 +167,7 @@ export default function TermsPage() {
                     <section className="space-y-4">
                         <h2 className="text-2xl font-semibold text-white border-b border-white/10 pb-2">9. Disclaimer of Warranties</h2>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO:
+                            THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO:
                         </p>
                         <ul className="list-disc list-inside text-[#A1A1AA] space-y-2 ml-4">
                             <li>Implied warranties of merchantability and fitness for a particular purpose</li>
@@ -180,7 +180,7 @@ export default function TermsPage() {
                     <section className="space-y-4">
                         <h2 className="text-2xl font-semibold text-white border-b border-white/10 pb-2">10. Limitation of Liability</h2>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            TO THE MAXIMUM EXTENT PERMITTED BY LAW, REPLY AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO:
+                            TO THE MAXIMUM EXTENT PERMITTED BY LAW, REPLY. (FARIZ ANJUM) AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO:
                         </p>
                         <ul className="list-disc list-inside text-[#A1A1AA] space-y-2 ml-4">
                             <li>Loss of profits, revenue, or data</li>
@@ -197,7 +197,7 @@ export default function TermsPage() {
                     <section className="space-y-4">
                         <h2 className="text-2xl font-semibold text-white border-b border-white/10 pb-2">11. Indemnification</h2>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            You agree to indemnify, defend, and hold harmless Reply and its officers, directors, employees, agents, licensors, and suppliers from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys' fees) arising out of or relating to:
+                            You agree to indemnify, defend, and hold harmless reply. (Fariz Anjum) and its officers, directors, employees, agents, licensors, and suppliers from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys&apos; fees) arising out of or relating to:
                         </p>
                         <ul className="list-disc list-inside text-[#A1A1AA] space-y-2 ml-4">
                             <li>Your violation of these Terms</li>
@@ -210,17 +210,14 @@ export default function TermsPage() {
                     <section className="space-y-4">
                         <h2 className="text-2xl font-semibold text-white border-b border-white/10 pb-2">12. Governing Law and Disputes</h2>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            These Terms shall be governed by and construed in accordance with the laws of the jurisdiction in which Reply operates, without regard to its conflict of law provisions.
-                        </p>
-                        <p className="text-[#A1A1AA] leading-relaxed">
-                            Any disputes arising out of or relating to these Terms or the Service shall be resolved through binding arbitration, except that either party may seek injunctive or other equitable relief in any court of competent jurisdiction.
+                            These Terms shall be governed by and construed in accordance with the laws of <strong>India</strong>. Any disputes arising out of or relating to these Terms or the Service shall be subject to the exclusive jurisdiction of the courts located in <strong>Azamgarh, Uttar Pradesh</strong>, or the appropriate courts in India.
                         </p>
                     </section>
 
                     <section className="space-y-4">
                         <h2 className="text-2xl font-semibold text-white border-b border-white/10 pb-2">13. Changes to Terms</h2>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            We reserve the right to modify these Terms at any time. We will notify you of any material changes by posting the updated Terms on this page and updating the "Last updated" date. Your continued use of the Service after any such changes constitutes your acceptance of the new Terms.
+                            We reserve the right to modify these Terms at any time. We will notify you of any material changes by posting the updated Terms on this page and updating the &quot;Last updated&quot; date. Your continued use of the Service after any such changes constitutes your acceptance of the new Terms.
                         </p>
                         <p className="text-[#A1A1AA] leading-relaxed">
                             It is your responsibility to review these Terms periodically for changes. If you do not agree to the modified Terms, you must discontinue use of the Service.
@@ -237,7 +234,7 @@ export default function TermsPage() {
                     <section className="space-y-4">
                         <h2 className="text-2xl font-semibold text-white border-b border-white/10 pb-2">15. Entire Agreement</h2>
                         <p className="text-[#A1A1AA] leading-relaxed">
-                            These Terms, together with our Privacy Policy, constitute the entire agreement between you and Reply regarding the use of the Service and supersede all prior agreements and understandings.
+                            These Terms, together with our Privacy Policy, constitute the entire agreement between you and reply. regarding the use of the Service and supersede all prior agreements and understandings.
                         </p>
                     </section>
 
@@ -246,10 +243,14 @@ export default function TermsPage() {
                         <p className="text-[#A1A1AA] leading-relaxed">
                             If you have any questions about these Terms, please contact us:
                         </p>
-                        <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                            <p className="text-white font-medium">Reply Legal</p>
-                            <p className="text-[#A1A1AA]">Email: legal@tryreply.app</p>
-                            <p className="text-[#A1A1AA]">Response Time: Within 5 business days</p>
+                        <div className="bg-white/5 border border-white/10 rounded-lg p-6 space-y-3">
+                            <p className="text-white font-medium text-lg">reply. Legal</p>
+                            <div className="space-y-2 text-[#A1A1AA]">
+                                <p><span className="text-orange-400 font-medium">Proprietor:</span> Fariz Anjum</p>
+                                <p><span className="text-orange-400 font-medium">Address:</span> Falah Nagar, Post Bilariyaganj, Tehsil Sagari, Azamgarh, Uttar Pradesh, 276121, India</p>
+                                <p><span className="text-orange-400 font-medium">Email:</span> legal@tryreply.app</p>
+                                <p><span className="text-orange-400 font-medium">Response Time:</span> Within 5 business days</p>
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -258,7 +259,7 @@ export default function TermsPage() {
             {/* Footer */}
             <footer className="border-t border-white/5 py-8 mt-16">
                 <div className="max-w-4xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-sm text-[#52525B]">© 2026 Reply. All rights reserved.</p>
+                    <p className="text-sm text-[#52525B]">© 2026 reply. (Fariz Anjum). All rights reserved.</p>
                     <div className="flex items-center gap-6">
                         <Link href="/privacy" className="text-sm text-[#52525B] hover:text-white transition-colors">Privacy</Link>
                         <Link href="/terms" className="text-sm text-[#52525B] hover:text-white transition-colors">Terms</Link>
