@@ -26,8 +26,9 @@ from database_pg import (
     get_instagram_account_by_user_id,
     deactivate_instagram_account,
     update_instagram_token,
+    get_backend_user_id_from_auth_id,
 )
-from routers.auth import get_current_user
+from middleware.auth_middleware import get_current_user
 
 router = APIRouter()
 
@@ -147,22 +148,39 @@ async def get_instagram_account_info(ig_user_id: str, access_token: str) -> dict
 
 @router.get("/auth/login")
 async def instagram_login(
-    user_id: int = Query(..., description="User ID to associate Instagram account with"),
+    user_id: str = Query(..., description="User ID (Better Auth UUID or backend int) to associate Instagram account with"),
     frontend_redirect: Optional[str] = Query(None, description="Frontend URL to redirect after OAuth")
 ):
     """
     Initiate Instagram OAuth flow.
     
     1. Generate state token
-    2. Store user_id with state
-    3. Redirect to Facebook OAuth
+    2. Lookup backend user_id if Better Auth UUID provided
+    3. Store user_id with state
+    4. Redirect to Facebook OAuth
     """
+    # Determine the backend user_id (integer)
+    backend_user_id: int = None
+    
+    # Check if it's a Better Auth UUID (contains letters) or a plain integer
+    try:
+        backend_user_id = int(user_id)
+    except ValueError:
+        # It's a Better Auth UUID string - lookup the backend user_id
+        backend_user_id = await get_backend_user_id_from_auth_id(user_id)
+        if not backend_user_id:
+            # User doesn't exist in backend users table yet
+            # This can happen if they only used Better Auth login
+            return RedirectResponse(
+                url=f"{frontend_redirect or 'https://tryreply.app/dashboard/settings'}?instagram_error=User+not+found.+Please+connect+YouTube+first."
+            )
+    
     # Generate secure state token
     state = secrets.token_urlsafe(32)
     
     # Store state -> user_id mapping (with optional frontend redirect)
     oauth_states[state] = {
-        "user_id": user_id,
+        "user_id": backend_user_id,  # Store the backend integer ID
         "frontend_redirect": frontend_redirect or "https://tryreply.app/dashboard/settings",
         "created_at": datetime.utcnow()
     }

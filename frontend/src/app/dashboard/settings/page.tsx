@@ -207,13 +207,14 @@ export default function SettingsPage() {
 
     // Instagram connect handler
     const handleConnectInstagram = () => {
-        const userId = localStorage.getItem('user_id');
+        // Get user ID from Better Auth session
+        const userId = user?.id;
         if (userId) {
             const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
             const loginUrl = `${BACKEND_URL}/api/instagram/auth/login?user_id=${userId}&frontend_redirect=${encodeURIComponent(window.location.href)}`;
             window.location.href = loginUrl;
         } else {
-            toast.error('User ID not found. Please log in again.');
+            toast.error('User session not found. Please log in again.');
         }
     };
 

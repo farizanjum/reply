@@ -21,7 +21,7 @@ from database_pg import (
     get_instagram_replied_comments,
     get_instagram_reply_stats,
 )
-from routers.auth import get_current_user
+from middleware.auth_middleware import get_current_user
 
 router = APIRouter()
 

@@ -1215,6 +1215,34 @@ async def update_last_quota_warning(user_id, use_direct: bool = False):
 # INSTAGRAM CRUD FUNCTIONS
 # =====================================================
 
+async def get_backend_user_id_from_auth_id(auth_user_id: str, use_direct: bool = False) -> Optional[int]:
+    """
+    Get the backend users.id (integer) from a Better Auth auth_users.id (UUID string).
+    This is needed because:
+    - Better Auth uses UUID strings in auth_users table
+    - Backend uses integer IDs in users table
+    - Both tables share the same email
+    """
+    # Query to join auth_users -> users by email and return backend user id
+    query = """
+        SELECT u.id 
+        FROM users u
+        JOIN auth_users au ON u.email = au.email
+        WHERE au.id = $1
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                row = await conn.fetchrow(query, auth_user_id)
+        else:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(query, auth_user_id)
+        return row["id"] if row else None
+    except Exception as e:
+        print(f"Error getting backend user_id from auth_id: {e}")
+        return None
+
+
 async def upsert_instagram_account(
     user_id: int,
     instagram_user_id: str,

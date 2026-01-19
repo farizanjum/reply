@@ -19,6 +19,7 @@ import {
     ExternalLink,
 } from 'lucide-react';
 import { VideosSkeleton } from '@/components/ui/LoadingSkeletons';
+import { useSession } from '@/lib/auth-client';
 import {
     getInstagramMedia,
     syncInstagramMedia,
@@ -54,6 +55,8 @@ interface ProcessingStatus {
 
 function InstagramMediaContent() {
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
+    const user = session?.user as any;
     const [selectedMedia, setSelectedMedia] = useState<InstagramMedia | null>(null);
     const [settings, setSettings] = useState<InstagramMediaSettings>({
         auto_reply_enabled: false,
@@ -252,17 +255,9 @@ function InstagramMediaContent() {
         }
     };
 
-    // Get user ID for login URL (from localStorage or session)
-    const getUserId = (): number | null => {
-        if (typeof window !== 'undefined') {
-            const userId = localStorage.getItem('user_id');
-            return userId ? parseInt(userId) : null;
-        }
-        return null;
-    };
-
     const handleConnectInstagram = () => {
-        const userId = getUserId();
+        // Get user ID from Better Auth session
+        const userId = user?.id;
         if (userId) {
             const loginUrl = getInstagramLoginUrl(userId, window.location.href);
             window.location.href = loginUrl;

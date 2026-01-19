@@ -2,25 +2,38 @@ import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
 
 /**
- * Shared Prisma Client Singleton with Prisma Accelerate
+ * Shared Prisma Client Singleton with optional Prisma Accelerate
  * 
  * Prisma Accelerate provides:
  * 1. Connection pooling for serverless environments (Vercel)
  * 2. Global edge caching
  * 3. Prevents "too many connections" errors
  * 
- * Set DATABASE_URL to your Prisma Accelerate URL in Vercel:
- * prisma+postgres://accelerate.prisma-data.net/?api_key=YOUR_KEY
+ * For production: Set DATABASE_URL to your Prisma Accelerate URL:
+ * prisma://accelerate.prisma-data.net/?api_key=YOUR_KEY
+ * 
+ * For local dev: Use standard PostgreSQL URL:
+ * postgresql://postgres:postgres@localhost:5432/reply_comments
  */
 
 const globalForPrisma = globalThis as unknown as {
     prisma: ReturnType<typeof createPrismaClient> | undefined
 };
 
+// Check if using Prisma Accelerate (production) or direct connection (local dev)
+const isPrismaAccelerate = process.env.DATABASE_URL?.startsWith('prisma://');
+
 function createPrismaClient() {
-    return new PrismaClient({
+    const baseClient = new PrismaClient({
         log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    }).$extends(withAccelerate());
+    });
+
+    // Only use Accelerate extension if DATABASE_URL is a prisma:// URL
+    if (isPrismaAccelerate) {
+        return baseClient.$extends(withAccelerate());
+    }
+
+    return baseClient;
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
@@ -31,5 +44,3 @@ if (!globalForPrisma.prisma) {
 }
 
 export default prisma;
-
-

@@ -124,10 +124,10 @@ export async function refreshInstagramToken(): Promise<{
 /**
  * Get Instagram OAuth login URL
  */
-export function getInstagramLoginUrl(userId: number, redirectUrl?: string): string {
+export function getInstagramLoginUrl(userId: string, redirectUrl?: string): string {
     const baseUrl = API_URL;
     const params = new URLSearchParams({
-        user_id: userId.toString(),
+        user_id: userId,
     });
     if (redirectUrl) {
         params.set('frontend_redirect', redirectUrl);
