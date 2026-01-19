@@ -26,11 +26,19 @@ jobs:
             # Pull latest code
             git pull origin master
             
-            # Rebuild and restart containers
-            sudo docker-compose -f docker-compose.prod.yml build web worker
-            sudo docker-compose -f docker-compose.prod.yml up -d web worker
+            # Stop all containers first to avoid ContainerConfig issue
+            sudo docker compose -f docker-compose.prod.yml down
+            
+            # Rebuild web and worker images
+            sudo docker compose -f docker-compose.prod.yml build web worker
+            
+            # Start all containers (including redis, beat, caddy)
+            sudo docker compose -f docker-compose.prod.yml up -d
+            
+            # Wait for containers to start
+            sleep 5
             
             # Show status
-            sudo docker-compose -f docker-compose.prod.yml ps
+            sudo docker compose -f docker-compose.prod.yml ps
             
             echo "✅ Deployment complete!"
