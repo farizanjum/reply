@@ -38,6 +38,15 @@ class Settings(BaseSettings):
     # YouTube API (REQUIRED - set in environment variables)
     YOUTUBE_API_KEY: str = os.getenv("YOUTUBE_API_KEY", "")
     
+    # Meta/Instagram API Configuration
+    META_APP_ID: str = os.getenv("META_APP_ID", "")
+    META_APP_SECRET: str = os.getenv("META_APP_SECRET", "")
+    META_GRAPH_API_VERSION: str = os.getenv("META_GRAPH_API_VERSION", "v22.0")
+    INSTAGRAM_OAUTH_REDIRECT_URI: str = os.getenv(
+        "INSTAGRAM_OAUTH_REDIRECT_URI",
+        "https://tryreply.app/api/auth/instagram/callback"
+    )
+    
     # Quota limits (500k total for 50 users)
     DAILY_QUOTA_LIMIT: int = 500000  # Global project limit (YouTube API)
     USER_DAILY_QUOTA_LIMIT: int = 10000  # Per-user quota units per day (~200 replies)
