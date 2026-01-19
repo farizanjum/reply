@@ -267,6 +267,144 @@ async def init_db():
             """)
         except:
             pass
+        
+        # =====================================================
+        # INSTAGRAM TABLES - Phase 3 of Instagram Integration
+        # =====================================================
+        
+        # Instagram Accounts table - stores connected Instagram Business accounts
+        try:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS instagram_accounts (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    instagram_user_id VARCHAR(255) UNIQUE NOT NULL,
+                    instagram_username VARCHAR(255),
+                    profile_picture_url TEXT,
+                    facebook_page_id VARCHAR(255),
+                    facebook_page_name VARCHAR(255),
+                    access_token TEXT NOT NULL,
+                    token_expiry TIMESTAMP,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+        except Exception as e:
+            print(f"Note: instagram_accounts table creation skipped: {e}")
+        
+        # Instagram accounts indexes
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_instagram_accounts_user_id 
+                ON instagram_accounts(user_id)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_instagram_accounts_ig_user_id 
+                ON instagram_accounts(instagram_user_id)
+            """)
+        except:
+            pass
+        
+        # Instagram Media table - stores posts/reels with automation settings
+        try:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS instagram_media (
+                    id SERIAL PRIMARY KEY,
+                    instagram_account_id INTEGER NOT NULL REFERENCES instagram_accounts(id) ON DELETE CASCADE,
+                    media_id VARCHAR(255) UNIQUE NOT NULL,
+                    media_type VARCHAR(50),
+                    caption TEXT,
+                    permalink TEXT,
+                    thumbnail_url TEXT,
+                    media_timestamp TIMESTAMP,
+                    auto_reply_enabled BOOLEAN DEFAULT FALSE,
+                    keywords JSONB DEFAULT '[]'::jsonb,
+                    reply_templates JSONB DEFAULT '[]'::jsonb,
+                    dm_enabled BOOLEAN DEFAULT FALSE,
+                    dm_template TEXT,
+                    resource_link TEXT,
+                    schedule_interval_minutes INTEGER DEFAULT 60,
+                    last_processed_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+        except Exception as e:
+            print(f"Note: instagram_media table creation skipped: {e}")
+        
+        # Instagram media indexes
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_instagram_media_account_id 
+                ON instagram_media(instagram_account_id)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_instagram_media_auto_reply 
+                ON instagram_media(auto_reply_enabled) WHERE auto_reply_enabled = true
+            """)
+        except:
+            pass
+        
+        # Instagram Replied Comments table - tracks processed comments
+        try:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS instagram_replied_comments (
+                    id SERIAL PRIMARY KEY,
+                    media_id INTEGER NOT NULL REFERENCES instagram_media(id) ON DELETE CASCADE,
+                    comment_id VARCHAR(255) UNIQUE NOT NULL,
+                    commenter_username VARCHAR(255),
+                    commenter_id VARCHAR(255),
+                    comment_text TEXT,
+                    matched_keyword VARCHAR(255),
+                    dm_sent BOOLEAN DEFAULT FALSE,
+                    dm_text TEXT,
+                    reply_sent BOOLEAN DEFAULT FALSE,
+                    reply_text TEXT,
+                    error_message TEXT,
+                    processed_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+        except Exception as e:
+            print(f"Note: instagram_replied_comments table creation skipped: {e}")
+        
+        # Instagram replied comments indexes
+        try:
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_ig_replied_comments_media_id 
+                ON instagram_replied_comments(media_id)
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_ig_replied_comments_comment_id 
+                ON instagram_replied_comments(comment_id)
+            """)
+        except:
+            pass
+        
+        # Migration: Add Instagram connection dismissed columns to users
+        try:
+            await conn.execute("""
+                ALTER TABLE users 
+                ADD COLUMN IF NOT EXISTS instagram_connection_dismissed BOOLEAN DEFAULT FALSE
+            """)
+        except:
+            pass
+        try:
+            await conn.execute("""
+                ALTER TABLE users 
+                ADD COLUMN IF NOT EXISTS youtube_connection_dismissed BOOLEAN DEFAULT FALSE
+            """)
+        except:
+            pass
     
     print("✓ PostgreSQL database initialized with connection pool")
 
@@ -1072,3 +1210,434 @@ async def update_last_quota_warning(user_id, use_direct: bool = False):
         print(f"Error updating last quota warning: {e}")
         return False
 
+
+# =====================================================
+# INSTAGRAM CRUD FUNCTIONS
+# =====================================================
+
+async def upsert_instagram_account(
+    user_id: int,
+    instagram_user_id: str,
+    instagram_username: str,
+    profile_picture_url: str,
+    facebook_page_id: str,
+    facebook_page_name: str,
+    access_token: str,
+    token_expiry: datetime = None,
+    use_direct: bool = False
+) -> Optional[Dict]:
+    """Create or update an Instagram account"""
+    query = """
+        INSERT INTO instagram_accounts (
+            user_id, instagram_user_id, instagram_username, profile_picture_url,
+            facebook_page_id, facebook_page_name, access_token, token_expiry, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE)
+        ON CONFLICT (instagram_user_id) DO UPDATE SET
+            access_token = EXCLUDED.access_token,
+            token_expiry = EXCLUDED.token_expiry,
+            instagram_username = COALESCE(EXCLUDED.instagram_username, instagram_accounts.instagram_username),
+            profile_picture_url = COALESCE(EXCLUDED.profile_picture_url, instagram_accounts.profile_picture_url),
+            facebook_page_id = COALESCE(EXCLUDED.facebook_page_id, instagram_accounts.facebook_page_id),
+            facebook_page_name = COALESCE(EXCLUDED.facebook_page_name, instagram_accounts.facebook_page_name),
+            is_active = TRUE,
+            updated_at = NOW()
+        RETURNING *
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                row = await conn.fetchrow(
+                    query, user_id, instagram_user_id, instagram_username,
+                    profile_picture_url, facebook_page_id, facebook_page_name,
+                    access_token, token_expiry
+                )
+        else:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    query, user_id, instagram_user_id, instagram_username,
+                    profile_picture_url, facebook_page_id, facebook_page_name,
+                    access_token, token_expiry
+                )
+        return dict(row) if row else None
+    except Exception as e:
+        print(f"Error upserting Instagram account: {e}")
+        return None
+
+
+async def get_instagram_account_by_user_id(user_id: int, use_direct: bool = False) -> Optional[Dict]:
+    """Get Instagram account for a user"""
+    query = """
+        SELECT * FROM instagram_accounts 
+        WHERE user_id = $1 AND is_active = TRUE
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                row = await conn.fetchrow(query, user_id)
+        else:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(query, user_id)
+        return dict(row) if row else None
+    except Exception as e:
+        print(f"Error getting Instagram account: {e}")
+        return None
+
+
+async def get_instagram_account_by_ig_user_id(instagram_user_id: str, use_direct: bool = False) -> Optional[Dict]:
+    """Get Instagram account by Instagram user ID"""
+    query = "SELECT * FROM instagram_accounts WHERE instagram_user_id = $1"
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                row = await conn.fetchrow(query, instagram_user_id)
+        else:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(query, instagram_user_id)
+        return dict(row) if row else None
+    except Exception as e:
+        print(f"Error getting Instagram account by IG user ID: {e}")
+        return None
+
+
+async def deactivate_instagram_account(user_id: int, use_direct: bool = False) -> bool:
+    """Deactivate an Instagram account (soft delete)"""
+    query = """
+        UPDATE instagram_accounts 
+        SET is_active = FALSE, access_token = '', updated_at = NOW()
+        WHERE user_id = $1
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                await conn.execute(query, user_id)
+        else:
+            async with pool.acquire() as conn:
+                await conn.execute(query, user_id)
+        return True
+    except Exception as e:
+        print(f"Error deactivating Instagram account: {e}")
+        return False
+
+
+async def update_instagram_token(
+    instagram_account_id: int,
+    access_token: str,
+    token_expiry: datetime,
+    use_direct: bool = False
+) -> bool:
+    """Update Instagram access token"""
+    query = """
+        UPDATE instagram_accounts 
+        SET access_token = $1, token_expiry = $2, updated_at = NOW()
+        WHERE id = $3
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                await conn.execute(query, access_token, token_expiry, instagram_account_id)
+        else:
+            async with pool.acquire() as conn:
+                await conn.execute(query, access_token, token_expiry, instagram_account_id)
+        return True
+    except Exception as e:
+        print(f"Error updating Instagram token: {e}")
+        return False
+
+
+# Instagram Media Functions
+
+async def upsert_instagram_media(
+    instagram_account_id: int,
+    media_id: str,
+    media_type: str,
+    caption: str,
+    permalink: str,
+    thumbnail_url: str,
+    media_timestamp: datetime,
+    use_direct: bool = False
+) -> Optional[Dict]:
+    """Create or update Instagram media"""
+    query = """
+        INSERT INTO instagram_media (
+            instagram_account_id, media_id, media_type, caption, permalink, thumbnail_url, media_timestamp
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (media_id) DO UPDATE SET
+            caption = EXCLUDED.caption,
+            thumbnail_url = COALESCE(EXCLUDED.thumbnail_url, instagram_media.thumbnail_url),
+            updated_at = NOW()
+        RETURNING *
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                row = await conn.fetchrow(
+                    query, instagram_account_id, media_id, media_type,
+                    caption, permalink, thumbnail_url, media_timestamp
+                )
+        else:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    query, instagram_account_id, media_id, media_type,
+                    caption, permalink, thumbnail_url, media_timestamp
+                )
+        return dict(row) if row else None
+    except Exception as e:
+        print(f"Error upserting Instagram media: {e}")
+        return None
+
+
+async def get_instagram_media_by_account(account_id: int, use_direct: bool = False) -> List[Dict]:
+    """Get all media for an Instagram account"""
+    query = """
+        SELECT * FROM instagram_media 
+        WHERE instagram_account_id = $1
+        ORDER BY media_timestamp DESC
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                rows = await conn.fetch(query, account_id)
+        else:
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(query, account_id)
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Error getting Instagram media: {e}")
+        return []
+
+
+async def get_enabled_instagram_media(use_direct: bool = False) -> List[Dict]:
+    """Get all Instagram media with auto-reply enabled that are due for processing"""
+    query = """
+        SELECT m.*, a.access_token, a.instagram_user_id, a.user_id as account_user_id
+        FROM instagram_media m
+        JOIN instagram_accounts a ON m.instagram_account_id = a.id
+        WHERE m.auto_reply_enabled = TRUE 
+        AND a.is_active = TRUE
+        AND (
+            m.last_processed_at IS NULL 
+            OR m.last_processed_at < NOW() - (m.schedule_interval_minutes || ' minutes')::interval
+        )
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                rows = await conn.fetch(query)
+        else:
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(query)
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Error getting enabled Instagram media: {e}")
+        return []
+
+
+async def update_instagram_media_settings(
+    media_id: int,
+    auto_reply_enabled: bool = None,
+    keywords: List[str] = None,
+    reply_templates: List[str] = None,
+    dm_enabled: bool = None,
+    dm_template: str = None,
+    resource_link: str = None,
+    schedule_interval_minutes: int = None,
+    use_direct: bool = False
+) -> bool:
+    """Update Instagram media automation settings"""
+    updates = []
+    params = []
+    param_idx = 1
+    
+    if auto_reply_enabled is not None:
+        updates.append(f"auto_reply_enabled = ${param_idx}")
+        params.append(auto_reply_enabled)
+        param_idx += 1
+    
+    if keywords is not None:
+        updates.append(f"keywords = ${param_idx}::jsonb")
+        params.append(json.dumps(keywords))
+        param_idx += 1
+    
+    if reply_templates is not None:
+        updates.append(f"reply_templates = ${param_idx}::jsonb")
+        params.append(json.dumps(reply_templates))
+        param_idx += 1
+    
+    if dm_enabled is not None:
+        updates.append(f"dm_enabled = ${param_idx}")
+        params.append(dm_enabled)
+        param_idx += 1
+    
+    if dm_template is not None:
+        updates.append(f"dm_template = ${param_idx}")
+        params.append(dm_template)
+        param_idx += 1
+    
+    if resource_link is not None:
+        updates.append(f"resource_link = ${param_idx}")
+        params.append(resource_link)
+        param_idx += 1
+    
+    if schedule_interval_minutes is not None:
+        updates.append(f"schedule_interval_minutes = ${param_idx}")
+        params.append(schedule_interval_minutes)
+        param_idx += 1
+    
+    if not updates:
+        return True
+    
+    updates.append("updated_at = NOW()")
+    params.append(media_id)
+    
+    query = f"""
+        UPDATE instagram_media 
+        SET {', '.join(updates)}
+        WHERE id = ${param_idx}
+    """
+    
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                await conn.execute(query, *params)
+        else:
+            async with pool.acquire() as conn:
+                await conn.execute(query, *params)
+        return True
+    except Exception as e:
+        print(f"Error updating Instagram media settings: {e}")
+        return False
+
+
+async def update_instagram_media_last_processed(media_id: int, use_direct: bool = False) -> bool:
+    """Update the last processed timestamp for Instagram media"""
+    query = "UPDATE instagram_media SET last_processed_at = NOW() WHERE id = $1"
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                await conn.execute(query, media_id)
+        else:
+            async with pool.acquire() as conn:
+                await conn.execute(query, media_id)
+        return True
+    except Exception as e:
+        print(f"Error updating Instagram media last processed: {e}")
+        return False
+
+
+# Instagram Replied Comments Functions
+
+async def add_instagram_replied_comment(
+    media_id: int,
+    comment_id: str,
+    commenter_username: str,
+    commenter_id: str,
+    comment_text: str,
+    matched_keyword: str = None,
+    dm_sent: bool = False,
+    dm_text: str = None,
+    reply_sent: bool = False,
+    reply_text: str = None,
+    error_message: str = None,
+    use_direct: bool = False
+) -> Optional[Dict]:
+    """Record an Instagram comment that was processed"""
+    query = """
+        INSERT INTO instagram_replied_comments (
+            media_id, comment_id, commenter_username, commenter_id, comment_text,
+            matched_keyword, dm_sent, dm_text, reply_sent, reply_text, error_message
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ON CONFLICT (comment_id) DO NOTHING
+        RETURNING *
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                row = await conn.fetchrow(
+                    query, media_id, comment_id, commenter_username, commenter_id,
+                    comment_text, matched_keyword, dm_sent, dm_text, reply_sent,
+                    reply_text, error_message
+                )
+        else:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    query, media_id, comment_id, commenter_username, commenter_id,
+                    comment_text, matched_keyword, dm_sent, dm_text, reply_sent,
+                    reply_text, error_message
+                )
+        return dict(row) if row else None
+    except Exception as e:
+        print(f"Error adding Instagram replied comment: {e}")
+        return None
+
+
+async def has_replied_to_instagram_comment(comment_id: str, use_direct: bool = False) -> bool:
+    """Check if we've already processed this Instagram comment"""
+    query = "SELECT 1 FROM instagram_replied_comments WHERE comment_id = $1"
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                row = await conn.fetchrow(query, comment_id)
+        else:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(query, comment_id)
+        return row is not None
+    except Exception as e:
+        print(f"Error checking Instagram replied comment: {e}")
+        return False
+
+
+async def get_instagram_replied_comments(media_id: int, limit: int = 50, use_direct: bool = False) -> List[Dict]:
+    """Get recently replied Instagram comments for a media item"""
+    query = """
+        SELECT * FROM instagram_replied_comments 
+        WHERE media_id = $1
+        ORDER BY processed_at DESC
+        LIMIT $2
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                rows = await conn.fetch(query, media_id, limit)
+        else:
+            async with pool.acquire() as conn:
+                rows = await conn.fetch(query, media_id, limit)
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Error getting Instagram replied comments: {e}")
+        return []
+
+
+async def get_instagram_reply_stats(account_id: int, days: int = 7, use_direct: bool = False) -> Dict:
+    """Get Instagram reply statistics for an account"""
+    query = """
+        SELECT 
+            COUNT(*) as total_processed,
+            COUNT(*) FILTER (WHERE reply_sent = TRUE) as replies_sent,
+            COUNT(*) FILTER (WHERE dm_sent = TRUE) as dms_sent,
+            COUNT(*) FILTER (WHERE matched_keyword IS NOT NULL) as keyword_matches
+        FROM instagram_replied_comments rc
+        JOIN instagram_media m ON rc.media_id = m.id
+        WHERE m.instagram_account_id = $1
+        AND rc.processed_at > NOW() - ($2 || ' days')::interval
+    """
+    try:
+        if use_direct or pool is None:
+            async with get_direct_connection() as conn:
+                row = await conn.fetchrow(query, account_id, days)
+        else:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(query, account_id, days)
+        return dict(row) if row else {
+            'total_processed': 0,
+            'replies_sent': 0,
+            'dms_sent': 0,
+            'keyword_matches': 0
+        }
+    except Exception as e:
+        print(f"Error getting Instagram reply stats: {e}")
+        return {
+            'total_processed': 0,
+            'replies_sent': 0,
+            'dms_sent': 0,
+            'keyword_matches': 0
+        }
