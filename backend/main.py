@@ -61,7 +61,7 @@ app.add_middleware(
 
 # Import and register routers
 from routers import auth, videos, analytics, templates, notifications
-from routers import instagram_callbacks, instagram_auth
+from routers import instagram_callbacks, instagram_auth, instagram_media
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(videos.router, prefix="/api/videos", tags=["videos"])
@@ -72,6 +72,7 @@ app.include_router(notifications.router, prefix="/api/notifications", tags=["not
 # Instagram/Meta endpoints
 app.include_router(instagram_callbacks.router, tags=["instagram-callbacks"])
 app.include_router(instagram_auth.router, prefix="/api/instagram", tags=["instagram-auth"])
+app.include_router(instagram_media.router, prefix="/api/instagram", tags=["instagram-media"])
 
 # Health check
 @app.get("/health")
