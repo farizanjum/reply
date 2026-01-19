@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, Button } from '@/components/ui';
-import { Settings, User, Bell, Shield, Key, Youtube, LogOut, Link2, Mail, Lock, Plus, Check, Trash2, AlertTriangle, Users, ShieldAlert } from 'lucide-react';
+import { Settings, User, Bell, Shield, Key, Youtube, LogOut, Link2, Mail, Lock, Plus, Check, Trash2, AlertTriangle, Users, ShieldAlert, Instagram, Loader2 } from 'lucide-react';
 import { useSession, signOut, signIn, authClient } from '@/lib/auth-client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -59,6 +59,12 @@ export default function SettingsPage() {
     const [loadingNotifications, setLoadingNotifications] = useState(false);
     const [savingNotifications, setSavingNotifications] = useState(false);
 
+    // Instagram connection state
+    const [instagramConnected, setInstagramConnected] = useState(false);
+    const [instagramAccount, setInstagramAccount] = useState<{ username?: string; profile_picture_url?: string } | null>(null);
+    const [isDisconnectingInstagram, setIsDisconnectingInstagram] = useState(false);
+    const [showInstagramDisconnectConfirm, setShowInstagramDisconnectConfirm] = useState(false);
+
     const tabs = [
         { id: 'profile', label: 'Profile', icon: User },
         { id: 'connections', label: 'Connections', icon: Link2 },
@@ -72,7 +78,36 @@ export default function SettingsPage() {
     useEffect(() => {
         checkPasswordStatus();
         fetchNotificationPreferences();
+        fetchInstagramStatus();
     }, []);
+
+    // Fetch Instagram account status
+    const fetchInstagramStatus = async () => {
+        try {
+            const token = localStorage.getItem('backend_token');
+            if (!token) return;
+
+            const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+            const response = await fetch(`${BACKEND_URL}/api/instagram/account`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setInstagramConnected(data.connected);
+                if (data.account) {
+                    setInstagramAccount({
+                        username: data.account.instagram_username,
+                        profile_picture_url: data.account.profile_picture_url
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch Instagram status:', error);
+        }
+    };
+
 
     // Fetch notification preferences
     const fetchNotificationPreferences = async () => {
@@ -170,6 +205,56 @@ export default function SettingsPage() {
         }
     };
 
+    // Instagram connect handler
+    const handleConnectInstagram = () => {
+        const userId = localStorage.getItem('user_id');
+        if (userId) {
+            const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+            const loginUrl = `${BACKEND_URL}/api/instagram/auth/login?user_id=${userId}&frontend_redirect=${encodeURIComponent(window.location.href)}`;
+            window.location.href = loginUrl;
+        } else {
+            toast.error('User ID not found. Please log in again.');
+        }
+    };
+
+    // Instagram disconnect handler
+    const handleDisconnectInstagram = async () => {
+        setIsDisconnectingInstagram(true);
+        setStatusMessage(null);
+
+        try {
+            const token = localStorage.getItem('backend_token');
+            const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+            const response = await fetch(`${BACKEND_URL}/api/instagram/auth/disconnect`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setShowInstagramDisconnectConfirm(false);
+                setInstagramConnected(false);
+                setInstagramAccount(null);
+
+                toast.success('Instagram Disconnected', {
+                    description: 'You can reconnect anytime.',
+                });
+            } else {
+                toast.error('Disconnect Failed', {
+                    description: data.detail || 'Failed to disconnect Instagram',
+                });
+            }
+        } catch (error) {
+            toast.error('Disconnect Failed', {
+                description: 'An unexpected error occurred',
+            });
+        } finally {
+            setIsDisconnectingInstagram(false);
+        }
+    };
     // Block delegation users from settings
     if (isDelegation) {
         return (
@@ -514,6 +599,89 @@ export default function SettingsPage() {
                                                         disabled={isDisconnecting}
                                                     >
                                                         {isDisconnecting ? 'Disconnecting...' : 'Yes, Disconnect'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Instagram Connection */}
+                            <div className="p-4 bg-[#0A0A0A] rounded-xl border border-white/5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-14 h-14 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-xl flex items-center justify-center shadow-lg shadow-pink-500/10 flex-shrink-0">
+                                            <Instagram className="w-7 h-7 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Instagram Business</p>
+                                            <p className="text-xs text-[#A1A1AA]">
+                                                {instagramConnected
+                                                    ? `@${instagramAccount?.username || 'Connected'}`
+                                                    : 'Not connected - Connect to auto-reply on Instagram'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {instagramConnected ? (
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2 text-green-500">
+                                                <Check className="w-4 h-4" />
+                                                <span className="text-xs font-medium">Connected</span>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => setShowInstagramDisconnectConfirm(true)}
+                                                className="text-xs text-neutral-400 hover:text-red-400"
+                                            >
+                                                Disconnect
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            variant="primary"
+                                            onClick={handleConnectInstagram}
+                                            className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 hover:opacity-90 border-0"
+                                        >
+                                            Connect
+                                        </Button>
+                                    )}
+                                </div>
+
+                                {/* Disconnect Confirmation */}
+                                {showInstagramDisconnectConfirm && (
+                                    <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                        <div className="flex items-start gap-3">
+                                            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-red-400 mb-1">Disconnect Instagram?</p>
+                                                <p className="text-xs text-[#A1A1AA] mb-3">
+                                                    Your Instagram access will be revoked and auto-replies will stop. You can reconnect anytime.
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => setShowInstagramDisconnectConfirm(false)}
+                                                        autoFocus
+                                                        className="border border-white/20"
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="danger"
+                                                        onClick={handleDisconnectInstagram}
+                                                        disabled={isDisconnectingInstagram}
+                                                    >
+                                                        {isDisconnectingInstagram ? (
+                                                            <>
+                                                                <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                                                Disconnecting...
+                                                            </>
+                                                        ) : 'Yes, Disconnect'}
                                                     </Button>
                                                 </div>
                                             </div>
