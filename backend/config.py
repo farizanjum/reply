@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     META_GRAPH_API_VERSION: str = os.getenv("META_GRAPH_API_VERSION", "v22.0")
     INSTAGRAM_OAUTH_REDIRECT_URI: str = os.getenv(
         "INSTAGRAM_OAUTH_REDIRECT_URI",
-        "https://tryreply.app/api/auth/instagram/callback"
+        "https://13.235.32.13.nip.io/api/instagram/auth/callback"
     )
     
     # Quota limits (500k total for 50 users)
